@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="light_grey">#BABABA</color>
+    <color name="light_yellow">#FAF9B6</color>
+    <color name="bright_yellow">#FFFF70</color>
+    <color name="red">#FF0000</color>
+    <color name="potato_blue">#49C1E6</color>
+    <color name="trans">#10000000</color>
+    <color name="black_trans">#80000000</color>
+    <color name="light_orange">#ffbb00</color>
+    <color name="potato_green">#3AB54A</color>
+    <color name="potato_orange">#F7941D</color>
+
+</resources>
