@@ -4,20 +4,13 @@ import java.util.HashMap;
 import java.util.Timer;
 
 import network.NetworkEvent;
+import network.SharingType;
+import network.UserData;
 
 public class SharingServer extends Server {
 
     public static final boolean DEBUG = true;
     public static final int GAME_PORT = 1337;
-
-    private final HashMap<Short, PlayerState> players = new HashMap<Short, PlayerState>();
-    private Timer gameTimer;
-
-    private enum GameStatus {
-        LOBBY, INGAME, POSTGAME
-    };
-
-    private GameStatus currentStatus = GameStatus.LOBBY;
 
     public static void main(String[] args) {
         System.out.println("Attempting to start game server");
@@ -33,29 +26,46 @@ public class SharingServer extends Server {
     public void handleEvent(final NetworkEvent e) {
         super.handleEvent(e);
         // get the gameId aka the clientNumber
-        short gameId = e.getGameId();
-        /*
-        if (e.getType().equals(PotatoType.SELECT_CHARACTER)) {
-            handleCharacterSelect(gameId, e.getData());
-        } else if (e.getType().equals(PotatoType.HIT_BY_POTATO)) {
-            handleHitByPotato(gameId, e.getData());
-        } else if (e.getType().equals(PotatoType.UPLOAD_SCORE)) {
-            handleUploadScore(gameId, e.getData());
-        } else if (e.getType().equals(PotatoType.START_GAME)) {
-            handleStartGame(gameId, e.getData());
-        } else if (e.getType().equals(PotatoType.QUIT_GAME)) {
-            handleQuitGame(gameId, e.getData());
-        }*/
+        short clientId = e.getGameId();
+        if (e.getType().equals(SharingType.LOG_IN)) {
+            handleLogIn(clientId, e.getData());
+        } else if (e.getType().equals(SharingType.NEW_USER)) {
+            handleNewUser(clientId, e.getData());
+        } else if (e.getType().equals(SharingType.UPDATE_USER)) {
+            handleUpdateUser(clientId, e.getData());
+        } else if (e.getType().equals(SharingType.HIT)) {
+            handleHit(clientId, e.getData());
+        } else if (e.getType().equals(SharingType.CONFIRM)) {
+            handleConfirm(clientId, e.getData());
+        }
         // we shouldn't be receiving any other events
     }
 
-    
+    private void handleLogIn(short senderId, Object data) {
+        //data: username, password
+        Object[] info = (Object[]) data;
+        String username = (String) info[0];
+        String password = (String) info[1];
+        //confirm in database
+        UserData user = new UserData();
+        ClientConnection senderClient = confirmedClientConnections.get(senderId);
+        senderClient
+                .sendEvent(new NetworkEvent(SharingType.LOG_IN, user.serialize()));
+    }
 
-    private void sendToAllClients(NetworkEvent event) {
-        for (Short id : players.keySet()) {
-            ClientConnection client = confirmedClientConnections.get(id);
-            if (client != null)
-                client.sendEvent(event);
-        }
+    private void handleNewUser(short senderId, Object data) {
+
+    }
+
+    private void handleUpdateUser(short senderId, Object data) {
+
+    }
+
+    private void handleHit(short senderId, Object data) {
+
+    }
+
+    private void handleConfirm(short senderId, Object data) {
+
     }
 }

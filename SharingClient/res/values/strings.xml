@@ -10,6 +10,20 @@
     <string name="login_submit">Submit</string>
     <string name="login_newuser">New User</string>
 
-    
+    <!-- shoot -->
+    <string name="shoot_greeting">Shoot your info!</string>
+    <string name="shoot_button">Shoot</string>
+    <string name="shoot_editprofile">Edit Info</string>
+    <string name="shoot_contacts">Contacts</string>
+
+    <!-- edit -->
+    <string name="edit_greeting">Edit Info</string>
+    <string name="edit_name">Name</string>
+    <string name="edit_password">Password</string>
+    <string name="edit_email">Email</string>
+    <string name="edit_facebook">Facebook</string>
+    <string name="edit_twitter">Twitter</string>
+    <string name="edit_linkedin">LinkedIn</string>
+    <string name="edit_submit">Submit</string>
 
 </resources>

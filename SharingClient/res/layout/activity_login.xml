@@ -33,15 +33,15 @@
         android:inputType="textPassword" />
 
     <Button
-        android:id="@+id/button1"
+        android:id="@+id/login_submit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Submit" />
+        android:text="@string/login_submit" />
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/login_newuser"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Button" />
+        android:text="@string/login_newuser" />
 
 </LinearLayout>

@@ -15,8 +15,8 @@ public class DataAccessor {
     /* These variable values are used to setup the Connection object */
 
     static final String URL = "jdbc:mysql://97.107.141.233:3306/laser";
-    static final String USER = "admin";
-    static final String PASSWORD = "zetr2qas";
+    static final String USER = "chupho_splat";
+    static final String PASSWORD = "2bNKF7H5jS";
     static final String DRIVER = "com.mysql.jdbc.Driver";
 
     /* Creates a connection using the values listed above. */
