@@ -21,11 +21,11 @@ int id edit_name 0x7f080001
 int id edit_password 0x7f080002
 int id edit_submit 0x7f080007
 int id edit_twitter 0x7f080005
+int id login_email 0x7f080009
 int id login_greeting 0x7f080008
 int id login_newuser 0x7f08000c
 int id login_password 0x7f08000a
 int id login_submit 0x7f08000b
-int id login_username 0x7f080009
 int id shoot_button 0x7f08000e
 int id shoot_contacts 0x7f080010
 int id shoot_editprofile 0x7f08000f

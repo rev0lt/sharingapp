@@ -46,11 +46,11 @@ public final class R {
         public static final int edit_password=0x7f080002;
         public static final int edit_submit=0x7f080007;
         public static final int edit_twitter=0x7f080005;
+        public static final int login_email=0x7f080009;
         public static final int login_greeting=0x7f080008;
         public static final int login_newuser=0x7f08000c;
         public static final int login_password=0x7f08000a;
         public static final int login_submit=0x7f08000b;
-        public static final int login_username=0x7f080009;
         public static final int shoot_button=0x7f08000e;
         public static final int shoot_contacts=0x7f080010;
         public static final int shoot_editprofile=0x7f08000f;

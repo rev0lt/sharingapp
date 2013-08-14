@@ -1,16 +1,19 @@
 package server;
 
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Timer;
 
 import network.NetworkEvent;
 import network.SharingType;
 import network.UserData;
+import network.NetworkEvent.GenericType;
 
 public class SharingServer extends Server {
 
     public static final boolean DEBUG = true;
     public static final int GAME_PORT = 1337;
+    public static HashMap<Integer, Integer> onlineUsers = new HashMap<Integer, Integer>();
 
     public static void main(String[] args) {
         System.out.println("Attempting to start game server");
@@ -41,31 +44,84 @@ public class SharingServer extends Server {
         // we shouldn't be receiving any other events
     }
 
+    public <T, E> T getKeyByValue(HashMap<T, E> map, E value) {
+        for (Entry<T, E> entry : map.entrySet()) {
+            if (value.equals(entry.getValue())) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
     private void handleLogIn(short senderId, Object data) {
-        //data: username, password
+        // data: email, password
         Object[] info = (Object[]) data;
-        String username = (String) info[0];
+        String email = (String) info[0];
         String password = (String) info[1];
-        //confirm in database
+        // confirm in database, fetch user info
         UserData user = new UserData();
+        // UPDATE ACCOUNT ID IN SERVER HASHMAP
+        // synchronization issues?
+        gameIds.remove(getKeyByValue(gameIds, senderId));
+        gameIds.put(user.getId(), senderId);
+
         ClientConnection senderClient = confirmedClientConnections.get(senderId);
-        senderClient
-                .sendEvent(new NetworkEvent(SharingType.LOG_IN, user.serialize()));
+        // data: ALL user data, clientId
+        Object[] sendArray = new Object[user.serialize().length + 1];
+        for (int i = 0; i < user.serialize().length; i++) {
+            sendArray[i] = user.serialize()[i];
+        }
+        sendArray[sendArray.length - 1] = senderId;
+        senderClient.sendEvent(new NetworkEvent(SharingType.LOG_IN, sendArray));
     }
 
     private void handleNewUser(short senderId, Object data) {
-
+        // data: email, password
+        Object[] info = (Object[]) data;
+        String email = (String) info[0];
+        String password = (String) info[1];
+        // add user to database
+        UserData user = new UserData();
+        
+        // UPDATE ACCOUNT ID IN SERVER HASHMAP
+        //synchronization?
+        gameIds.remove(getKeyByValue(gameIds, senderId));
+        gameIds.put(user.getId(), senderId);
+        
+        ClientConnection senderClient = confirmedClientConnections.get(senderId);
+        // data: id, client id
+        Object[] sendData = new Object[2];
+        sendData[0] = user.getId();
+        sendData[1] = senderId;
+        senderClient.sendEvent(new NetworkEvent(SharingType.NEW_USER, sendData));
     }
 
     private void handleUpdateUser(short senderId, Object data) {
-
+        Object[] userArray = (Object[]) data;
+        UserData user = new UserData();
+        user.deserialize(userArray);
+        // overwrite old user in database
+        ClientConnection senderClient = confirmedClientConnections.get(senderId);
+        // data: confirmation - true or false
+        senderClient.sendEvent(new NetworkEvent(SharingType.UPDATE_USER, true));
     }
 
     private void handleHit(short senderId, Object data) {
-
+        int shooterAccountId = (Integer) data;
+        // fetch user from database
+        UserData shooterProfile = new UserData();
+        ClientConnection senderClient = confirmedClientConnections.get(senderId);
+        //data: public profile info, accountId
+        senderClient.sendEvent(new NetworkEvent(SharingType.USER_DATA, shooterProfile.serialize()));
     }
 
     private void handleConfirm(short senderId, Object data) {
-
+        int shooterAccountId = (Integer) data;
+        int shooterClientId = gameIds.get(shooterAccountId);
+        int senderAccountId = getKeyByValue(gameIds, senderId);
+        //fetch sender from database with senderAccountId
+        UserData sender = new UserData();
+        ClientConnection senderClient = confirmedClientConnections.get(shooterClientId);
+        senderClient.sendEvent(new NetworkEvent(SharingType.USER_DATA, sender.serialize()));
     }
 }
