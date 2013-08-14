@@ -17,4 +17,20 @@ public class State {
     public static void resetAll() {
         instance = null;
     }
+    
+    public UserData getMe() {
+    	return me;
+    }
+    
+    public short getClientId() {
+    	return myClientId;
+    }
+    
+    public void setMe(UserData m) {
+    	me = m;
+    }
+    
+    public void setClientId(short c) {
+    	myClientId = c;
+    }
 }

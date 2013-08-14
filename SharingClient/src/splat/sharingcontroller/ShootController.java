@@ -1,58 +1,105 @@
 package splat.sharingcontroller;
 
 import network.NetworkEvent;
-import serverconnection.PingListener;
+import network.SharingType;
+import network.UserData;
+import serverconnection.HandshakeListener;
 import serverconnection.ServerConnection;
-import splat.Splat;
+import serverconnection.ServerConnection.OnDisconnectListener;
 import splat.OnDataReceiveListener;
+import splat.Splat;
+import splat.sharingmodel.State;
 import splat.sharingview.ShootActivity;
 
 public class ShootController {
 	ShootActivity view;
 	private Splat splat;
 
-    public ShootController(ShootActivity view) {
-        this.view = view;
-        ServerConnection sc = NetworkController.getServerConnection();
-        if (sc != null) {
-            // We backed into this activity from the lobby
-            sc.setOnReceiveNetworkEventListener(new ShootListener());
-        }
-        setupSplat();
-    }
-    
-    /**
-     * Sets up the splat device and its listeners.
-     * 
-     * @author sbobra
-     */
-    private void setupSplat() {
-        splat = Splat.getInstance();
-        splat.setOnDataReceiveListener(new OnDataReceiveListener() {
-            @Override
-            public void onDataReceive(Splat splat, byte data) {
-                //blah
-            }
-        });
-        splat.turnOnLed();
-    }
-    
-    /**
-     * Called when user is shooting ID to another user
-     * 
-     * @author sbobra
-     */
-    public void shootInfo() {
-    	byte data = 0;
-        splat.sendData(data);
-    }
-    
-    private class ShootListener extends PingListener {
-        @Override
-        public void onReceiveNetworkEvent(final ServerConnection serverConnection,
-                final NetworkEvent event) {
-            super.onReceiveNetworkEvent(serverConnection, event);
-            //implement me
-        }
-    }
+	public ShootController(ShootActivity view) {
+		this.view = view;
+		ServerConnection sc = NetworkController.getServerConnection();
+		if (sc != null) {
+			// We backed into this activity from the lobby
+			sc.setOnReceiveNetworkEventListener(new ShootNetworkEventListener());
+			sc.setOnDisconnectListener(new ShootDisconnectListener());
+		}
+		setupSplat();
+	}
+
+	/**
+	 * Sets up the splat device and its listeners.
+	 * 
+	 * @author sbobra
+	 */
+	private void setupSplat() {
+		splat = Splat.getInstance();
+		splat.setOnDataReceiveListener(new OnDataReceiveListener() {
+			@Override
+			public void onDataReceive(Splat splat, byte data) {
+				// blah
+			}
+		});
+		splat.turnOnLed();
+	}
+
+	/**
+	 * Called when user is shooting ID to another user
+	 * 
+	 * @author sbobra
+	 */
+	public void shootInfo() {
+		byte data = (byte) State.getInstance().getMe().getId();
+		splat.sendData(data);
+	}
+
+	private class ShootNetworkEventListener extends HandshakeListener {
+
+		@Override
+		public void onReceiveNetworkEvent(final ServerConnection sc,
+				final NetworkEvent evt) {
+			super.onReceiveNetworkEvent(sc, evt);
+			if (evt.getType().equals(SharingType.USER_DATA)) {
+				Object[] dataArray = (Object[]) evt.getData();
+				Object[] userArray = new Object[State.getInstance().getMe()
+						.serialize().length];
+				for (int i = 0; i < State.getInstance().getMe().serialize().length; i++) {
+					userArray[i] = dataArray[i];
+				}
+				UserData otherUserData = new UserData();
+				otherUserData.deserialize(userArray);
+				// TODO: display other user's info on screen
+				int permission = (Integer) dataArray[dataArray.length - 1];
+				if (permission == 0) {
+					// needs confirmation
+					//TODO: ALERT DIALOG. send event if press okay, if not, send nothing
+					sc.sendEvent(new NetworkEvent(SharingType.CONFIRM, otherUserData.getId()));
+				}
+				// else, transaction complete
+				
+				/*
+				 * lobbyActivity.runOnUiThread(new Runnable() {
+				 * 
+				 * @Override public void run() { toGame((Short) evt.getData());
+				 * } });
+				 */
+			}
+		}
+	}
+	
+	/**
+	 * Shows message on disconnect
+	 * 
+	 * @author Sam
+	 */
+	public class ShootDisconnectListener implements OnDisconnectListener {
+		@Override
+		public void onDisconnect(ServerConnection connection) {
+			view.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					// view.showDisconnectDialog();
+				}
+			});
+		}
+	}
 }

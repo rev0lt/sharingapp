@@ -8,9 +8,11 @@ import serverconnection.PingListener;
 import serverconnection.ServerConnection;
 import serverconnection.ServerConnection.OnDisconnectListener;
 import splat.sharingmodel.Settings;
+import splat.sharingmodel.State;
 import splat.sharingview.LoginActivity;
 import splat.sharingview.ShootActivity;
 import network.SharingType;
+import network.UserData;
 
 public class LoginController {
 	private LoginActivity view;
@@ -21,7 +23,7 @@ public class LoginController {
 		ServerConnection sc = NetworkController.getServerConnection();
 		if (sc != null) {
 			// We backed into this activity from the lobby
-			sc.setOnReceiveNetworkEventListener(new BackoutListener());
+			sc.setOnReceiveNetworkEventListener(null);
 		}
 	}
 
@@ -34,17 +36,15 @@ public class LoginController {
 					@Override
 					public void onConnectionConfirmed(
 							ServerConnection connection) {
-						connection.setOnReceiveNetworkEventListener(null);
-						connection.setOnDisconnectListener(null);
-						String email;
-						String password;
+						connection
+								.setOnReceiveNetworkEventListener(new LoginNetworkEventListener());
+						String email = "";
+						String password = "";
 						Object[] data = new Object[2];
 						data[0] = email;
+						data[1] = password;// ENCRYPT ME
 						connection.sendEvent(new NetworkEvent(
-								SharingType.LOG_IN, THINGS));
-						view.startActivity(new Intent(view, ShootActivity.class));
-						view.finish();
-
+								SharingType.LOG_IN, data));
 					}
 				}));
 	}
@@ -66,13 +66,64 @@ public class LoginController {
 		}
 	}
 
-	private class BackoutListener extends PingListener {
+	private class LoginNetworkEventListener extends HandshakeListener {
+
 		@Override
-		public void onReceiveNetworkEvent(
-				final ServerConnection serverConnection,
-				final NetworkEvent event) {
-			super.onReceiveNetworkEvent(serverConnection, event);
-			// implement me
+		public void onReceiveNetworkEvent(final ServerConnection sc,
+				final NetworkEvent evt) {
+			super.onReceiveNetworkEvent(sc, evt);
+			if (evt.getType().equals(SharingType.LOG_IN)) {
+				// interpret data
+				Object[] dataArray = (Object[]) evt.getData();
+				Object[] userArray = new Object[State.getInstance().getMe()
+						.serialize().length];
+				for (int i = 0; i < State.getInstance().getMe().serialize().length; i++) {
+					userArray[i] = dataArray[i];
+				}
+				UserData myData = new UserData();
+				myData.deserialize(userArray);
+				// set state based on data received
+				State.getInstance().setMe(myData);
+				State.getInstance().setClientId(
+						(Short) dataArray[dataArray.length - 1]);
+				// go to next view
+				sc.setOnReceiveNetworkEventListener(null);
+				sc.setOnDisconnectListener(null);
+				view.startActivity(new Intent(view, ShootActivity.class));
+				view.finish();
+				/*
+				 * lobbyActivity.runOnUiThread(new Runnable() {
+				 * 
+				 * @Override public void run() { toGame((Short) evt.getData());
+				 * } });
+				 */
+			} else if (evt.getType().equals(SharingType.NEW_USER)) {
+				// fetch from view
+				String email = "";
+				String password = "";
+				// interpret data
+				Object[] dataArray = (Object[]) evt.getData();
+				int myAccountId = (Integer) dataArray[0];
+				short myClientId = (Short) dataArray[1];
+				//set state based on data received
+				UserData myData = new UserData();
+				myData.setEmail(email);
+				myData.setPassword(password);
+				myData.setId(myAccountId);
+				State.getInstance().setMe(myData);
+				State.getInstance().setClientId(myClientId);
+				//go to next view
+				sc.setOnReceiveNetworkEventListener(null);
+				sc.setOnDisconnectListener(null);
+				view.startActivity(new Intent(view, ShootActivity.class));
+				view.finish();
+				/*
+				 * lobbyActivity.runOnUiThread(new Runnable() {
+				 * 
+				 * @Override public void run() { toGame((Short) evt.getData());
+				 * } });
+				 */
+			}
 		}
 	}
 }

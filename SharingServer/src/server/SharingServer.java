@@ -103,16 +103,23 @@ public class SharingServer extends Server {
         // overwrite old user in database
         ClientConnection senderClient = confirmedClientConnections.get(senderId);
         // data: confirmation - true or false
-        senderClient.sendEvent(new NetworkEvent(SharingType.UPDATE_USER, true));
+        senderClient.sendEvent(new NetworkEvent(SharingType.UPDATE_USER, 1));
     }
 
     private void handleHit(short senderId, Object data) {
         int shooterAccountId = (Integer) data;
         // fetch user from database
         UserData shooterProfile = new UserData();
+        
+        Object[] sendArray = new Object[shooterProfile.serialize().length + 1];
+        for (int i = 0; i < shooterProfile.serialize().length; i++) {
+            sendArray[i] = shooterProfile.serialize()[i];
+        }
+        //0 - needs confirmation
+        sendArray[sendArray.length - 1] = 0;
         ClientConnection senderClient = confirmedClientConnections.get(senderId);
         //data: public profile info, accountId
-        senderClient.sendEvent(new NetworkEvent(SharingType.USER_DATA, shooterProfile.serialize()));
+        senderClient.sendEvent(new NetworkEvent(SharingType.USER_DATA, sendArray));
     }
 
     private void handleConfirm(short senderId, Object data) {
@@ -121,7 +128,13 @@ public class SharingServer extends Server {
         int senderAccountId = getKeyByValue(gameIds, senderId);
         //fetch sender from database with senderAccountId
         UserData sender = new UserData();
+        Object[] sendArray = new Object[sender.serialize().length + 1];
+        for (int i = 0; i < sender.serialize().length; i++) {
+            sendArray[i] = sender.serialize()[i];
+        }
+        //1 - no confirmation needed
+        sendArray[sendArray.length - 1] = 1;
         ClientConnection senderClient = confirmedClientConnections.get(shooterClientId);
-        senderClient.sendEvent(new NetworkEvent(SharingType.USER_DATA, sender.serialize()));
+        senderClient.sendEvent(new NetworkEvent(SharingType.USER_DATA, sendArray));
     }
 }
