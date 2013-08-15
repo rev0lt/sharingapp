@@ -26,6 +26,10 @@ int id login_greeting 0x7f080008
 int id login_newuser 0x7f08000c
 int id login_password 0x7f08000a
 int id login_submit 0x7f08000b
+int id newuser_cancel 0x7f080014
+int id newuser_email 0x7f080011
+int id newuser_password 0x7f080012
+int id newuser_submit 0x7f080013
 int id shoot_button 0x7f08000e
 int id shoot_contacts 0x7f080010
 int id shoot_editprofile 0x7f08000f
@@ -34,6 +38,7 @@ int layout activity_contacts 0x7f030000
 int layout activity_edit 0x7f030001
 int layout activity_login 0x7f030002
 int layout activity_shoot 0x7f030003
+int layout dialog_newuser 0x7f030004
 int string action_settings 0x7f040001
 int string app_name 0x7f040000
 int string edit_email 0x7f04000d

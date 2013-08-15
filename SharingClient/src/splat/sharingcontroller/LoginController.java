@@ -1,18 +1,18 @@
 package splat.sharingcontroller;
 
-import android.content.Intent;
 import network.NetworkEvent;
+import network.SharingType;
+import network.UserData;
 import serverconnection.HandshakeListener;
 import serverconnection.HandshakeListener.OnConnectionConfirmedListener;
-import serverconnection.PingListener;
 import serverconnection.ServerConnection;
 import serverconnection.ServerConnection.OnDisconnectListener;
 import splat.sharingmodel.Settings;
 import splat.sharingmodel.State;
 import splat.sharingview.LoginActivity;
 import splat.sharingview.ShootActivity;
-import network.SharingType;
-import network.UserData;
+import android.content.Intent;
+import android.widget.Toast;
 
 public class LoginController {
 	private LoginActivity view;
@@ -27,7 +27,7 @@ public class LoginController {
 		}
 	}
 
-	public void toLobby() {
+	public void onSubmitPressed() {
 		NetworkController.startConnection(Settings.getIp(), Settings.getPort(),
 				Settings.newId(), loginDisconnectListener);
 
@@ -49,6 +49,35 @@ public class LoginController {
 				}));
 	}
 
+	public void onNewUserPressed() {
+		// TODO: pop up dialog
+	}
+
+	public void onNewUserSubmitPressed(final String email, final String password) {
+		NetworkController.startConnection(Settings.getIp(), Settings.getPort(),
+				Settings.newId(), loginDisconnectListener);
+
+		NetworkController.getServerConnection().connect(
+				new HandshakeListener(new OnConnectionConfirmedListener() {
+					@Override
+					public void onConnectionConfirmed(
+							ServerConnection connection) {
+						connection
+								.setOnReceiveNetworkEventListener(new LoginNetworkEventListener());
+						Object[] data = new Object[2];
+						data[0] = email;
+						data[1] = password;
+						connection.sendEvent(new NetworkEvent(
+								SharingType.NEW_USER, data));
+					}
+				}));
+		// TODO: close dialog
+	}
+
+	public void onNewUserCancelPressed() {
+		// TODO: close dialog
+	}
+
 	/**
 	 * Shows message on disconnect
 	 * 
@@ -60,6 +89,10 @@ public class LoginController {
 			view.runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
+					Toast toast = Toast.makeText(view.getApplicationContext(),
+							(CharSequence) "Could not connect to server!",
+							Toast.LENGTH_SHORT);
+					toast.show();
 					// view.showDisconnectDialog();
 				}
 			});
@@ -105,14 +138,14 @@ public class LoginController {
 				Object[] dataArray = (Object[]) evt.getData();
 				int myAccountId = (Integer) dataArray[0];
 				short myClientId = (Short) dataArray[1];
-				//set state based on data received
+				// set state based on data received
 				UserData myData = new UserData();
 				myData.setEmail(email);
 				myData.setPassword(password);
 				myData.setId(myAccountId);
 				State.getInstance().setMe(myData);
 				State.getInstance().setClientId(myClientId);
-				//go to next view
+				// go to next view
 				sc.setOnReceiveNetworkEventListener(null);
 				sc.setOnDisconnectListener(null);
 				view.startActivity(new Intent(view, ShootActivity.class));

@@ -51,6 +51,10 @@ public final class R {
         public static final int login_newuser=0x7f08000c;
         public static final int login_password=0x7f08000a;
         public static final int login_submit=0x7f08000b;
+        public static final int newuser_cancel=0x7f080014;
+        public static final int newuser_email=0x7f080011;
+        public static final int newuser_password=0x7f080012;
+        public static final int newuser_submit=0x7f080013;
         public static final int shoot_button=0x7f08000e;
         public static final int shoot_contacts=0x7f080010;
         public static final int shoot_editprofile=0x7f08000f;
@@ -61,6 +65,7 @@ public final class R {
         public static final int activity_edit=0x7f030001;
         public static final int activity_login=0x7f030002;
         public static final int activity_shoot=0x7f030003;
+        public static final int dialog_newuser=0x7f030004;
     }
     public static final class string {
         public static final int action_settings=0x7f040001;

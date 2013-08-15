@@ -1,5 +1,7 @@
 package splat.sharingcontroller;
 
+import android.content.Intent;
+import android.widget.Toast;
 import network.NetworkEvent;
 import network.SharingType;
 import network.UserData;
@@ -9,15 +11,17 @@ import serverconnection.ServerConnection.OnDisconnectListener;
 import splat.OnDataReceiveListener;
 import splat.Splat;
 import splat.sharingmodel.State;
+import splat.sharingview.EditActivity;
 import splat.sharingview.ShootActivity;
 
 public class ShootController {
-	ShootActivity view;
+	private ShootActivity view;
 	private Splat splat;
+	private ServerConnection sc;
 
 	public ShootController(ShootActivity view) {
 		this.view = view;
-		ServerConnection sc = NetworkController.getServerConnection();
+		sc = NetworkController.getServerConnection();
 		if (sc != null) {
 			// We backed into this activity from the lobby
 			sc.setOnReceiveNetworkEventListener(new ShootNetworkEventListener());
@@ -36,10 +40,23 @@ public class ShootController {
 		splat.setOnDataReceiveListener(new OnDataReceiveListener() {
 			@Override
 			public void onDataReceive(Splat splat, byte data) {
-				// blah
+				sc.sendEvent(new NetworkEvent(SharingType.HIT,
+						data));
 			}
 		});
 		splat.turnOnLed();
+	}
+
+	public void onShootPressed() {
+		// TODO: display message
+		shootInfo();
+	}
+
+	public void onEditProfilePressed() {
+		sc.setOnReceiveNetworkEventListener(null);
+		sc.setOnDisconnectListener(null);
+		view.startActivity(new Intent(view, EditActivity.class));
+		view.finish();
 	}
 
 	/**
@@ -71,11 +88,13 @@ public class ShootController {
 				int permission = (Integer) dataArray[dataArray.length - 1];
 				if (permission == 0) {
 					// needs confirmation
-					//TODO: ALERT DIALOG. send event if press okay, if not, send nothing
-					sc.sendEvent(new NetworkEvent(SharingType.CONFIRM, otherUserData.getId()));
+					// TODO: ALERT DIALOG. send event if press okay, if not,
+					// send nothing
+					sc.sendEvent(new NetworkEvent(SharingType.CONFIRM,
+							otherUserData.getId()));
 				}
 				// else, transaction complete
-				
+
 				/*
 				 * lobbyActivity.runOnUiThread(new Runnable() {
 				 * 
@@ -85,7 +104,7 @@ public class ShootController {
 			}
 		}
 	}
-	
+
 	/**
 	 * Shows message on disconnect
 	 * 
@@ -97,6 +116,10 @@ public class ShootController {
 			view.runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
+					Toast toast = Toast.makeText(view.getApplicationContext(),
+							(CharSequence) "Could not connect to server!",
+							Toast.LENGTH_SHORT);
+					toast.show();
 					// view.showDisconnectDialog();
 				}
 			});
