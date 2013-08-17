@@ -1,0 +1,18 @@
+package network;
+
+public class UserData {
+    LoginActivity view;
+
+    public UserData() {
+        
+    }
+    
+    private class BackoutListener extends PingListener {
+        @Override
+        public void onReceiveNetworkEvent(final ServerConnection serverConnection,
+                final NetworkEvent event) {
+            super.onReceiveNetworkEvent(serverConnection, event);
+            //implement me
+        }
+    }
+}

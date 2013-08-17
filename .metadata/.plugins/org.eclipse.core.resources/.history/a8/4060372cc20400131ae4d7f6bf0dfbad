@@ -1,0 +1,40 @@
+package splat.sharingcontroller;
+
+import network.NetworkEvent;
+import network.SharingType;
+import network.UserData;
+import serverconnection.HandshakeListener;
+import serverconnection.ServerConnection;
+import splat.sharingmodel.State;
+import splat.sharingview.EditActivity;
+
+public class EditController {
+	EditActivity view;
+
+    public EditController(EditActivity view) {
+        this.view = view;
+        ServerConnection sc = NetworkController.getServerConnection();
+        if (sc != null) {
+            // We backed into this activity from the lobby
+        	sc.setOnReceiveNetworkEventListener(new EditNetworkEventListener());
+        }
+    }
+    
+    private class EditNetworkEventListener extends HandshakeListener {
+
+		@Override
+		public void onReceiveNetworkEvent(final ServerConnection sc,
+				final NetworkEvent evt) {
+			super.onReceiveNetworkEvent(sc, evt);
+			if (evt.getType().equals(SharingType.UPDATE_USER)) {
+				int success = (Integer) evt.getData();
+				if (success == 1) {
+					//update state
+					//
+				} else {
+					//error message
+				}
+			}
+		}
+	}
+}

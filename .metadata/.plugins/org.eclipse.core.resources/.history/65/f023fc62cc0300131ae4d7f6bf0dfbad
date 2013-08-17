@@ -1,0 +1,7 @@
+package network;
+
+import network.NetworkEvent.Type;
+
+public enum SharingType implements Type {
+    LOG_IN, LOG_OUT, NEW_USER, HIT, ;
+}

@@ -1,0 +1,201 @@
+package splat.potatoview;
+
+import java.util.Timer;
+import java.util.TimerTask;
+
+import splat.customui.PotatoSwipeDetector;
+import splat.customui.PotatoSwipeDetector.OnSwipeListener;
+import splat.potato.R;
+import splat.potatocontroller.HotPotatoController;
+import android.app.Activity;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.TranslateAnimation;
+import android.widget.ImageView;
+
+public class HotPotatoView extends Activity {
+    private ImageView launchPotato;
+    private ImageView launchPotatoNew;
+
+    private HotPotatoController hotPotatoController;
+    private GameActivity gameActivity;
+
+    private TranslateAnimation fling;
+    private TranslateAnimation moveUp;
+    private PotatoSwipeDetector swipeDetector;
+
+    private ImageView light1;
+    private ImageView light2;
+    private ImageView light3;
+
+    private ImageView title;
+    private ImageView launcher;
+
+    private Timer lightTimer;
+
+    private boolean currentlyShooting = false;
+
+    private HotPotatoView view = this;
+
+    public HotPotatoView(GameActivity gameActivity) {
+        this.gameActivity = gameActivity;
+        this.hotPotatoController = new HotPotatoController(gameActivity.getGameController());
+        title = (ImageView) gameActivity.findViewById(R.id.hotpotato_fling_message);
+        launcher = (ImageView) gameActivity.findViewById(R.id.hotpotato_launcher);
+
+        setupArrowAnimation();
+        setupPotatoAnimation();
+        setupSwipeDetector();
+
+        restart();
+    }
+
+    /**
+     * Sets up the swipe detector to listen for successful swipe events.
+     */
+    private void setupSwipeDetector() {
+        swipeDetector =
+                (PotatoSwipeDetector) gameActivity.findViewById(R.id.hotpotato_swipedetector);
+        swipeDetector.setOnSwipeListener(new OnSwipeListener() {
+            @Override
+            public void onSwipeDetected() {
+                playAnimationAndShoot();
+            }
+        });
+    }
+
+    /**
+     * Sets up the animation to match this player's character.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupPotatoAnimation() {
+        launchPotato = (ImageView) gameActivity.findViewById(R.id.launch_potato);
+        launchPotatoNew = (ImageView) gameActivity.findViewById(R.id.launch_potato_new);
+
+        fling = new TranslateAnimation(0, 0, 0, -800);
+
+        fling.setDuration(200);
+        fling.setFillAfter(true);
+        fling.setAnimationListener(new AnimationListener() {
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                // TODO Auto-generated method stub
+                hotPotatoController.shootPotato();
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void onAnimationStart(Animation animation) {
+                // TODO Auto-generated method stub
+            }
+
+        });
+        
+        moveUp = new TranslateAnimation(0, 0, 400, 0);
+
+        moveUp.setDuration(400);
+        moveUp.setFillAfter(true);
+        moveUp.setAnimationListener(new AnimationListener() {
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                currentlyShooting = false;
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void onAnimationStart(Animation animation) {
+                // TODO Auto-generated method stub
+            }
+
+        });
+    }
+
+    /**
+     * Sets up the light-arrow animation.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupArrowAnimation() {
+        light1 = (ImageView) gameActivity.findViewById(R.id.launchpotato_light1);
+        light2 = (ImageView) gameActivity.findViewById(R.id.launchpotato_light2);
+        light3 = (ImageView) gameActivity.findViewById(R.id.launchpotato_light3);
+
+        lightTimer = new Timer();
+        lightTimer.scheduleAtFixedRate(new TimerTask() {
+
+            private boolean swapTwo = true;
+
+            @Override
+            public void run() {
+                view.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (swapTwo) {
+                            swapImageViews(light1, light2);
+                        } else {
+                            swapImageViews(light1, light3);
+                        }
+
+                        swapTwo = !swapTwo;
+                    }
+                });
+            }
+
+        }, 0, 500);
+    }
+
+    /**
+     * Plays the animation and shoots the potato.
+     * 
+     * @author josephsoltzberg
+     */
+    private void playAnimationAndShoot() {
+        if (!currentlyShooting) {
+            currentlyShooting = true;
+            launchPotato.startAnimation(fling);
+            launchPotatoNew.startAnimation(moveUp);
+        }
+    }
+
+    public void reset() {
+        currentlyShooting = false;
+        launchPotato.clearAnimation();
+
+        ViewUtils.free(title);
+        ViewUtils.free(launchPotato);
+        ViewUtils.free(launchPotatoNew);
+        
+        System.gc();
+    }
+
+    public void restart() {
+        light1.setImageResource(R.drawable.fling_arrowlight);
+        light2.setImageResource(R.drawable.fling_arrow_normal);
+        light3.setImageResource(R.drawable.fling_arrow_normal);
+        launcher.setImageResource(R.drawable.hotpotato07);
+        title.setImageResource(R.drawable.hotpotato_fling_message);
+        launchPotato.setImageResource(R.drawable.start_potato);
+        launchPotatoNew.setImageResource(R.drawable.start_potato);
+    }
+
+    private void swapImageViews(ImageView v1, ImageView v2) {
+        ViewGroup.LayoutParams params1 = v1.getLayoutParams();
+
+        v1.setLayoutParams(v2.getLayoutParams());
+        v2.setLayoutParams(params1);
+    }
+}

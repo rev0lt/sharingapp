@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/slicing_minigame"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/potato_blue"
+    android:orientation="vertical" >
+
+    <ImageView
+        android:id="@+id/slicing_image"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_gravity="center" />
+
+    <ImageView
+        android:id="@+id/slicing_valid_box"
+        android:layout_width="270dp"
+        android:layout_height="240dp"
+        android:layout_gravity="center"
+        android:src="@color/black_trans"
+        android:visibility="invisible" />
+
+    <splat.customui.FingerTrail
+        android:id="@+id/slicing_finger_trail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <ProgressBar
+        android:id="@+id/slicing_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom" />
+
+    <TextView
+        android:id="@+id/slicing_instructions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/light_orange"
+        android:gravity="center"
+        android:paddingBottom="20dp"
+        android:paddingTop="20dp"
+        android:text="@string/slicing_instructions"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <ImageView
+        android:id="@+id/sliced_fries"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_gravity="center"
+        android:visibility="invisible" />
+
+</FrameLayout>

@@ -1,0 +1,201 @@
+package splat.minigames;
+
+import java.util.LinkedList;
+import java.util.Random;
+
+import splat.potato.R;
+import splat.potatoview.GameActivity;
+import splat.potatoview.ViewUtils;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.TranslateAnimation;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+
+public class DiggingMinigame extends MinigameController {
+
+    private static final int NUMBER_OF_VEGETABLES = 5;
+
+    private static final int ANIMATION_MOVE_VERTICAL = -200;
+    private static final int ANIMATION_DURATION = 1000;
+
+    private static final int VEGETABLE_WIDTH = 170;
+    private static final int VEGETABLE_HEIGHT = 350;
+
+    private LinkedList<Vegetable> vegetables = new LinkedList<Vegetable>();
+    private boolean isCurrentlyDigging = false;
+
+    @Override
+    public void initialize(GameActivity activity, View view) {
+        super.initialize(activity, view);
+
+        gameView = new DiggingMinigameView();
+        gameView.setView(view);
+        gameView.initialize();
+
+        addVegetables(DiggingMinigame.NUMBER_OF_VEGETABLES);
+        restart();
+    }
+
+    @Override
+    public void complete(int id) {
+        super.complete(id);
+
+        // Do this so you can't click during the transition
+        isCurrentlyDigging = true;
+    }
+
+    @Override
+    public void reset() {
+        for (Vegetable v : vegetables) {
+            v.cancelAnimation();
+            ViewUtils.free(v.getView());
+        }
+        super.reset();
+    }
+
+    @Override
+    public void restart() {
+        super.restart();
+
+        // This is because of the call in "complete"
+        isCurrentlyDigging = false;
+        randomizePotato();
+    }
+
+
+    /**
+     * Adds a [count] numbers of vegetables to the garden layout.
+     * 
+     * @param count The number of vegetables to add.
+     * 
+     * @author Mike
+     */
+    public void addVegetables(int count) {
+        for (int i = 0; i < count; i++) {
+            Vegetable v = createVegetable();
+            ((DiggingMinigameView) gameView).addVegetable(v);
+        }
+
+        randomizePotato();
+    }
+
+    public Vegetable createVegetable() {
+        ImageView image = new ImageView(activity);
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(VEGETABLE_WIDTH, VEGETABLE_HEIGHT, 1);
+        image.setLayoutParams(params);
+
+        Vegetable result = new Vegetable(image);
+
+        if (vegetables == null) vegetables = new LinkedList<Vegetable>();
+        vegetables.add(result);
+
+        return result;
+    }
+
+    public void randomizePotato() {
+        int place = (new Random()).nextInt(vegetables.size());
+
+        for (int i = 0; i < vegetables.size(); i++) {
+            Vegetable v = vegetables.get(i);
+
+            if (i == place) {
+                v.setIsThePotato(true);
+                v.getView().setImageResource(R.drawable.goldpotato_plant);
+            } else {
+                v.setIsThePotato(false);
+                v.getView().setImageResource(R.drawable.angry_plant);
+            }
+
+            v.getView().clearAnimation();
+        }
+    }
+
+    private class DiggingMinigameView extends MinigameView {
+
+        private LinearLayout gardenLayout;
+        private ImageView diggingDirt;
+
+        @Override
+        public void initialize() {
+            gardenLayout = (LinearLayout) view.findViewById(R.id.digging_garden_layout);
+            diggingDirt = (ImageView) view.findViewById(R.id.digging_dirt);
+        }
+
+        @Override
+        public void reset() {
+            ViewUtils.free(diggingDirt);
+        }
+
+        @Override
+        public void restart() {
+            diggingDirt.setImageResource(R.drawable.dirt);
+        }
+
+        public void addVegetable(Vegetable v) {
+            gardenLayout.addView(v.getView());
+        }
+    }
+
+    private class Vegetable {
+        private ImageView view;
+        private boolean isThePotato = false;
+
+        public Vegetable(ImageView view) {
+            this.view = view;
+            setupListener();
+        }
+
+        public void setupListener() {
+            view.setOnClickListener(new View.OnClickListener() {
+
+                @Override
+                public void onClick(View v) {
+                    if (isCurrentlyDigging) return;
+
+                    isCurrentlyDigging = true;
+
+                    TranslateAnimation animation =
+                            new TranslateAnimation(0, 0, 0, ANIMATION_MOVE_VERTICAL);
+                    animation.setDuration(ANIMATION_DURATION);
+                    animation.setFillAfter(true);
+
+                    animation.setAnimationListener(new AnimationListener() {
+
+                        @Override
+                        public void onAnimationEnd(Animation animation) {
+                            isCurrentlyDigging = false;
+
+                            if (isThePotato) {
+                                complete(GameActivity.Minigames.MINIGAME_DIGGING.index());
+                            }
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animation animation) {}
+
+                        @Override
+                        public void onAnimationStart(Animation animation) {}
+
+                    });
+
+                    view.startAnimation(animation);
+                }
+            });
+        }
+
+        public void cancelAnimation() {
+            view.clearAnimation();
+        }
+
+        public ImageView getView() {
+            return view;
+        }
+
+        public void setIsThePotato(boolean isThePotato) {
+            this.isThePotato = isThePotato;
+        }
+    }
+}

@@ -1,0 +1,27 @@
+package splat.potatoview;
+
+import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.widget.ImageView;
+
+public class ViewUtils {
+
+    /**
+     * Sets transparency of view (value between 0 and 1)
+     */
+    public static void setAlpha(View view, float alpha) {
+        final AlphaAnimation animation = new AlphaAnimation(alpha, alpha);
+        animation.setDuration(0);
+        animation.setFillAfter(true);
+        view.startAnimation(animation);
+    }
+
+    /**
+     * Frees up memory from unused bitmaps
+     * 
+     * @author sam
+     */
+    public static void free(ImageView imageView) {
+        imageView.setImageDrawable(null);
+    }
+}

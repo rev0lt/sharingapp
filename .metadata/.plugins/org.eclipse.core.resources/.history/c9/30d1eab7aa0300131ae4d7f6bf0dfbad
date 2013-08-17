@@ -1,0 +1,111 @@
+package splat.sharingview;
+
+import splat.sharing.R;
+import splat.sharingmodel.GameState;
+import splat.sharingmodel.HardCoded;
+import splat.sharingcontroller.LoginController;;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.os.Bundle;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.ImageView;
+
+public class LoginActivity extends Activity {
+
+    private static final String ALERT_DIALOG_MESSAGE = "Please pick a character!";
+    private static final String ALERT_BUTTON_TEXT = "OK";
+    private static final String DISCONNECT_DIALOG_MESSAGE = "Cannot connect to server!";
+    private static final String DISCONNECT_BUTTON_TEXT = "Quit Application";
+
+    private LoginController controller;
+    private AlertDialog alertDialog;
+
+    @Override
+    public void onCreate(Bundle bundle) {
+        super.onCreate(bundle);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        setContentView(R.layout.activity_character_select);
+        controller = new CharacterSelectController(this);
+        next = (ImageView) findViewById(R.id.character_next_button);
+        setOnClickListeners();
+        setUpAlertDialog();
+    }
+
+    private void setUpAlertDialog() {
+        alertDialog =
+                new AlertDialog.Builder(this).setTitle(ALERT_DIALOG_MESSAGE)
+                        .setNeutralButton(ALERT_BUTTON_TEXT, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                alertDialog.dismiss();
+                            }
+                        }).create();
+    }
+
+    private void setOnClickListeners() {
+        for (int i = 0; i < HardCoded.avatarIds.length; i++) {
+            final int id = i;
+            findViewById(HardCoded.avatarIds[i]).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(final View v) {
+                    for (int j = 0; j < HardCoded.avatarIds.length; j++)
+                        ViewUtils.setAlpha((ImageView) findViewById(HardCoded.avatarIds[j]),
+                                (j == id ? 1f : 0.5f));
+                    controller.selectCharacter((short) id);
+                };
+            });
+        }
+        next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(final View v) {
+                if (GameState.getInstance().getMyCharacterId() == -1) {
+                    alertDialog.show();
+                } else {
+                    next.setEnabled(false);
+                    ViewUtils.setAlpha(next, 0.5f);
+                    controller.toLobby();
+                }
+            };
+        });
+    }
+
+    public void showDisconnectDialog() {
+        alertDialog =
+                new AlertDialog.Builder(this)
+                        .setTitle(DISCONNECT_DIALOG_MESSAGE)
+                        .setCancelable(false)
+                        .setNeutralButton(DISCONNECT_BUTTON_TEXT,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface disconnectDialog, int which) {
+                                        disconnectDialog.dismiss();
+                                        android.os.Process.killProcess(android.os.Process.myPid());
+                                    }
+                                }).create();
+        alertDialog.show();
+    }
+    
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        freeResources();
+    }
+    
+    /**
+     * Free images when the activity is destroyed
+     * 
+     * @author sbobra
+     */
+    public void freeResources() {
+        ViewUtils.free(next);
+        for (int i = 0; i<HardCoded.avatarIds.length;i++) {
+            ViewUtils.free((ImageView)findViewById(HardCoded.avatarIds[i]));
+        }
+        System.gc();
+    }
+
+}

@@ -1,0 +1,258 @@
+package splat.potatoview;
+
+import java.util.Random;
+
+import splat.minigames.DiggingMinigame;
+import splat.minigames.MashingMinigame;
+import splat.minigames.MinigameController;
+import splat.minigames.PickingMinigame;
+import splat.minigames.SlicingMinigame;
+import splat.potato.R;
+import splat.potatocontroller.GameController;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Point;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.Bundle;
+import android.view.Display;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.ViewFlipper;
+
+public class GameActivity extends Activity implements SensorEventListener {
+    private static final String DISCONNECT_DIALOG_MESSAGE = "Cannot connect to server!";
+    private static final String DISCONNECT_BUTTON_TEXT = "Quit Application";
+
+    public static enum Minigames {
+        MINIGAME_DIGGING(0), MINIGAME_MASHING(1), MINIGAME_PICKING(2), MINIGAME_SLICING(3);
+
+        private final int index;
+
+        Minigames(int index) {
+            this.index = index;
+        }
+
+        public int index() {
+            return index;
+        }
+    }
+
+    public static enum Gamescreen {
+        NO_POTATO(0), POTATO_MINIGAME(1), LAUNCH_POTATO(2);
+
+        private final int index;
+
+        Gamescreen(int index) {
+            this.index = index;
+        }
+
+        public int index() {
+            return index;
+        }
+    }
+
+    private GameController controller;
+    private AlertDialog disconnectDialog;
+    private SensorManager sensorManager;
+
+    private RelativeLayout microPotatoOverlay;
+    private ViewFlipper mainViewFlipper;
+    private ViewFlipper gameViewFlipper;
+
+    private MiniPotatoView miniPotatoView;
+    private HotPotatoView hotPotatoView;
+    private View minigame;
+
+    @Override
+    public void onCreate(final Bundle bundle) {
+        super.onCreate(bundle);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        setContentView(R.layout.activity_game);
+        attachComponents();
+
+        controller = new GameController(this);
+        miniPotatoView = new MiniPotatoView(this);
+        hotPotatoView = new HotPotatoView(this);
+        setupSensor();
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor arg0, int arg1) {}
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        controller.handleSensorEvent(event);
+    }
+
+    /**
+     * Attach view components that deal with the game activity
+     * 
+     * @author Mike
+     */
+    private void attachComponents() {
+        mainViewFlipper = (ViewFlipper) findViewById(R.id.mainViewFlipper);
+        microPotatoOverlay = (RelativeLayout) findViewById(R.id.mainView);
+
+        mainViewFlipper.setInAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_in));
+        mainViewFlipper
+                .setOutAnimation(AnimationUtils.loadAnimation(this, android.R.anim.fade_out));
+
+        // LOAD GAME SCREENS
+        getLayoutInflater().inflate(R.layout.layout_no_potato, mainViewFlipper);
+        minigame = getLayoutInflater().inflate(R.layout.layout_minigame, mainViewFlipper);
+        getLayoutInflater().inflate(R.layout.layout_launch_potato, mainViewFlipper);
+
+        gameViewFlipper = (ViewFlipper) minigame.findViewById(R.id.gameViewFlipper);
+    }
+
+    public MinigameController[] loadAllMinigames() {
+        MinigameController[] minigames = new MinigameController[4];
+
+        MinigameController game = null;
+        View view = null;
+
+        // DIGGING MINIGAME
+        game = new DiggingMinigame();
+        view = ViewFlipper.inflate(this, R.layout.minigame_digging, gameViewFlipper);
+        game.initialize(this, view);
+        minigames[Minigames.MINIGAME_DIGGING.index()] = game;
+
+        // MASHING MINIGAME
+        game = new MashingMinigame();
+        view = ViewFlipper.inflate(this, R.layout.minigame_mashing, gameViewFlipper);
+        game.initialize(this, view);
+        minigames[Minigames.MINIGAME_MASHING.index()] = game;
+
+        // PICKING MINIGAME
+        game = new PickingMinigame();
+        view = ViewFlipper.inflate(this, R.layout.minigame_picking, gameViewFlipper);
+        game.initialize(this, view);
+        minigames[Minigames.MINIGAME_PICKING.index()] = game;
+
+        // SLICING MINIGAME
+        game = new SlicingMinigame();
+        view = ViewFlipper.inflate(this, R.layout.minigame_slicing, gameViewFlipper);
+        game.initialize(this, view);
+        minigames[Minigames.MINIGAME_SLICING.index()] = game;
+        return minigames;
+    }
+
+    public int loadMinigame() {
+        int game_id = (new Random()).nextInt(4);
+        miniPotatoView.reset();
+        controller.getMiniGame(game_id).restart();
+        mainViewFlipper.setDisplayedChild(Gamescreen.POTATO_MINIGAME.index());
+        gameViewFlipper.setDisplayedChild(game_id);
+        return game_id;
+    }
+
+    public void minigameCompleted(int id) {
+        controller.minigameCompleted();
+        controller.getMiniGame(id).reset();
+        hotPotatoView.restart();
+        mainViewFlipper.showNext();
+
+    }
+
+    public void showNoPotato() {
+        hotPotatoView.reset();
+        miniPotatoView.restart();
+        mainViewFlipper.setDisplayedChild(Gamescreen.NO_POTATO.index());
+    }
+
+    /**
+     * Sets up the shake-sensor to start listening.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupSensor() {
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        Sensor s = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER).get(0);
+        sensorManager.registerListener(this, s, SensorManager.SENSOR_DELAY_GAME);
+    }
+
+    public void addPotatoToScreen(ImageView newPotato, RelativeLayout.LayoutParams params) {
+        microPotatoOverlay.addView(newPotato, params);
+    }
+
+    public void removePotatoFromScreen(ImageView deadPotato) {
+        if (microPotatoOverlay != null) microPotatoOverlay.removeView(deadPotato);
+        ViewUtils.free(deadPotato);
+    }
+
+    @SuppressWarnings("deprecation")
+    public int getWidth() {
+        if (android.os.Build.VERSION.SDK_INT >= 13) {
+            Display display = getWindowManager().getDefaultDisplay();
+            Point size = new Point();
+            display.getSize(size);
+            return size.x;
+        } else {
+            Display display = getWindowManager().getDefaultDisplay();
+            return (display.getWidth());
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public int getHeight() {
+        if (android.os.Build.VERSION.SDK_INT >= 13) {
+            Display display = getWindowManager().getDefaultDisplay();
+            Point size = new Point();
+            display.getSize(size);
+            return size.y;
+        } else {
+            Display display = getWindowManager().getDefaultDisplay();
+            return (display.getHeight());
+        }
+    }
+
+    public void showDisconnectDialog() {
+        disconnectDialog =
+                new AlertDialog.Builder(this)
+                        .setTitle(DISCONNECT_DIALOG_MESSAGE)
+                        .setCancelable(false)
+                        .setNeutralButton(DISCONNECT_BUTTON_TEXT,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface disconnectDialog, int which) {
+                                        disconnectDialog.dismiss();
+                                        // startActivity(new Intent(getBaseContext(),
+                                        // StartActivity.class));
+                                        // finish();
+                                        android.os.Process.killProcess(android.os.Process.myPid());
+                                    }
+                                }).create();
+        disconnectDialog.show();
+    }
+
+    public GameController getGameController() {
+        return controller;
+    }
+
+    public void free() {
+        miniPotatoView.reset();
+        hotPotatoView.reset();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        microPotatoOverlay = null;
+        mainViewFlipper = null;
+        gameViewFlipper = null;
+        miniPotatoView = null;
+        hotPotatoView = null;
+        minigame = null;
+        super.onDestroy();
+    }
+}

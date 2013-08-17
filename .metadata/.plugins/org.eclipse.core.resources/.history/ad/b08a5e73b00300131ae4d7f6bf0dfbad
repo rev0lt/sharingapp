@@ -1,0 +1,137 @@
+package splat.sharingmodel;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Set;
+
+public class State {
+
+    private static State instance;
+    
+    private short myClientId = -1;
+
+    public static State getInstance() {
+        if (instance == null) {
+            instance = new State();
+        }
+        return instance;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State s) {
+        state = s;
+    }
+
+    public short getMyClientId() {
+        return myClientId;
+    }
+
+    public void setMyClientId(short id) {
+        myClientId = id;
+    }
+
+    public static void resetAll() {
+        instance = null;
+    }
+
+    public void resetScores() {
+        for (Opponent o : opponentCharacterMapping.values()) {
+            o.setPotatoesReceived(0);
+        }
+    }
+
+    public short getMyCharacterId() {
+        return myCharacterId;
+    }
+
+    public void setMyCharacterId(final short id) {
+        myCharacterId = id;
+    }
+
+    public Short getCharacterIDFromClientID(Short opponent) {
+        if (opponentCharacterMapping.get(opponent) == null)
+            return null;
+        else
+            return opponentCharacterMapping.get(opponent).getCharacterId();
+    }
+
+    public int getPotatoesFromClientID(Short opponent) {
+        return opponentCharacterMapping.get(opponent).getPotatoesReceived();
+    }
+
+    public void addPotatoFromOpponent(Short opponent) {
+        opponentCharacterMapping.get(opponent).addPotato();
+    }
+
+    public void addOpponent(short clientId, short characterId) {
+        opponentCharacterMapping.put(clientId, new Opponent(characterId, 0));
+    }
+
+    public void removeOpponent(short clientId) {
+        opponentCharacterMapping.remove(clientId);
+    }
+
+    public boolean havePotato() {
+        if (state == State.HOT_POTATO || state == State.MINIGAME)
+            return true;
+        else
+            return false;
+    }
+
+    public void togglePotato() {
+        if (state == State.NO_POTATO)
+            state = State.MINIGAME;
+        else
+            state = State.NO_POTATO;
+    }
+
+    public Short[] getCharacterIds() {
+        Short[] list = new Short[opponentCharacterMapping.size()];
+        int index = 0;
+        for (Opponent o : opponentCharacterMapping.values()) {
+            list[index++] = o.getCharacterId();
+        }
+        return list;
+    }
+
+    public Collection<Opponent> getOpponents() {
+        return opponentCharacterMapping.values();
+    }
+
+    public Set<Short> getClientIds() {
+        return opponentCharacterMapping.keySet();
+    }
+
+    public boolean existsOpponent(short id) {
+        return (opponentCharacterMapping.containsKey(id));
+    }
+
+    public class Opponent {
+        public final short characterId;
+        public int potatoesReceived; // # potatoes received from opponent
+
+        public Opponent(short charId, int potatoes) {
+            this.characterId = charId;
+            this.potatoesReceived = potatoes;
+        }
+
+        public short getCharacterId() {
+            return characterId;
+        }
+
+        public int getPotatoesReceived() {
+            return potatoesReceived;
+        }
+
+        public void setPotatoesReceived(int p) {
+            potatoesReceived = p;
+        }
+
+        public void addPotato() {
+            potatoesReceived++;
+        }
+    }
+}

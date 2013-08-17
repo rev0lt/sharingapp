@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Potato Power!</string>
+    <string name="action_settings">Settings</string>
+    <string name="none"></string>
+
+    <!-- character select -->
+    <string name="character_select_character">Pick a Potato</string>
+
+    <!-- in game -->
+    <string name="ingame_three">3</string>
+    <string name="ingame_dash"> – </string>
+    <string name="ingame_two">2</string>
+    <string name="ingame_one">1</string>
+    <string name="ingame_space"></string>
+    <string name="launch_micro_potatoes">Launch micro potatoes at any opponent!</string>
+    <string name="launch_the_potato">Launch the potato! Quick, before it explodes!</string>
+    <string name="mashing_instructions">Mash the potato!</string>
+    <string name="digging_instructions">Find the golden potato!</string>
+    <string name="slicing_instructions">Slice the potato!</string>
+    <string name="picking_instructions">Picking the gold potatoes!</string>
+
+    <!-- post game -->
+    <string name="endgame_waiting">Waiting…</string>
+    <string name="endgame_winner">Winner!</string>
+    <string name="endgame_tie">Tie!</string>
+    <string name="endgame_dash">–</string>
+    <string name="endgame_restart">Restart</string>
+    <string name="endgame_home">Home</string>
+    <string name="postgame_restart">Restart</string>
+    <string name="postgame_home">Home</string>
+    <string name="postgame_gameover_message"><u>Game Over</u></string>
+    <string name="postgame_player_message">Player</string>
+    <string name="postgame_losses_message">Losses</string>
+    <string name="postgame_potatoes_message">Potatoes successfully sent last round</string>
+    <string name="postgame_waiting_message">Waiting for other players</string>
+    <string name="postgame_round">Round: </string>
+    <string name="postgame_zero">0</string>
+
+    <!-- lobby -->
+    <string name="lobby_joining">Starting game…</string>
+    <string name="lobby_start">Start</string>
+    <string name="lobby_waiting">Waiting for other players…</string>
+    <string name="lobby_start_instructions">Press Start when all players are in the lobby</string>
+    <string name="lobby_background">Background</string>
+
+</resources>

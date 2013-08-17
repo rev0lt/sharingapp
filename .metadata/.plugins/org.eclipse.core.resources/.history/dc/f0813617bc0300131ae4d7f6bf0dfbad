@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/potato_blue"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/start_gamename"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="15dp"
+        android:text="@string/app_name"
+        android:textColor="@color/bright_yellow"
+        android:textSize="40sp"
+        android:textStyle="bold" />
+
+    <ImageView
+        android:id="@+id/start_potato"
+        android:layout_width="270dp"
+        android:layout_height="342dp"
+        android:layout_gravity="center"
+        android:contentDescription="@string/none"
+        android:src="@drawable/start_potato" />
+
+    <ImageView
+        android:id="@+id/start_next"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="right"
+        android:contentDescription="@string/none"
+        android:src="@drawable/start_next_arrow" />
+
+</LinearLayout>

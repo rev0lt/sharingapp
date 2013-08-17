@@ -1,0 +1,78 @@
+package splat.sharingcontroller;
+
+import network.NetworkEvent;
+import network.SharingType;
+import network.UserData;
+import serverconnection.HandshakeListener;
+import serverconnection.ServerConnection;
+import splat.OnDataReceiveListener;
+import splat.Splat;
+import splat.sharingmodel.State;
+import splat.sharingview.ShootActivity;
+
+public class ShootController {
+	ShootActivity view;
+	private Splat splat;
+
+	public ShootController(ShootActivity view) {
+		this.view = view;
+		ServerConnection sc = NetworkController.getServerConnection();
+		if (sc != null) {
+			// We backed into this activity from the lobby
+			sc.setOnReceiveNetworkEventListener(new ShootNetworkEventListener());
+		}
+		setupSplat();
+	}
+
+	/**
+	 * Sets up the splat device and its listeners.
+	 * 
+	 * @author sbobra
+	 */
+	private void setupSplat() {
+		splat = Splat.getInstance();
+		splat.setOnDataReceiveListener(new OnDataReceiveListener() {
+			@Override
+			public void onDataReceive(Splat splat, byte data) {
+				// blah
+			}
+		});
+		splat.turnOnLed();
+	}
+
+	/**
+	 * Called when user is shooting ID to another user
+	 * 
+	 * @author sbobra
+	 */
+	public void shootInfo() {
+		byte data = 0;
+		splat.sendData(data);
+	}
+
+	private class ShootNetworkEventListener extends HandshakeListener {
+
+		@Override
+		public void onReceiveNetworkEvent(final ServerConnection sc,
+				final NetworkEvent evt) {
+			super.onReceiveNetworkEvent(sc, evt);
+			if (evt.getType().equals(SharingType.USER_DATA)) {
+				Object[] dataArray = (Object[]) evt.getData();
+				Object[] userArray = new Object[State.getInstance().getMe()
+						.serialize().length];
+				for (int i = 0; i < State.getInstance().getMe().serialize().length; i++) {
+					userArray[i] = dataArray[i];
+				}
+				UserData myData = new UserData();
+				myData.deserialize(userArray);
+				
+				/*
+				 * lobbyActivity.runOnUiThread(new Runnable() {
+				 * 
+				 * @Override public void run() { toGame((Short) evt.getData());
+				 * } });
+				 */
+			}
+		}
+	}
+}

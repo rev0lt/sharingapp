@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Sharing App</string>
+    <string name="action_settings">Settings</string>
+    <string name="none"></string>
+
+    <!-- login -->
+    <string name="login_greeting">Log In</string>
+    <string name="login_submit">Submit</string>
+    <string name="login_newuser">New User</string>
+
+    <!-- shoot -->
+    <string name="shoot_greeting">Shoot your info!</string>
+    <string name="shoot_button">Shoot</string>
+    <string name="shoot_editprofile">Edit Info</string>
+    <string name="shoot_contacts">Contacts</string>
+
+    <!-- edit -->
+    <string name="edit_greeting">Edit Info</string>
+    <string name="edit_greeting">Name</string>
+    <string name="edit_greeting">Password</string>
+    <string name="edit_greeting">Email</string>
+
+</resources>

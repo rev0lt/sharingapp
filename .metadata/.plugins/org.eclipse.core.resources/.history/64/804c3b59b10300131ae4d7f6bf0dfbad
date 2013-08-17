@@ -1,0 +1,225 @@
+package server;
+
+import java.util.HashMap;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import network.NetworkEvent;
+import network.PotatoType;
+
+public class SharingServer extends Server {
+
+    public static final boolean DEBUG = true;
+
+    public static final int MIN_GAME_LENGTH = 100000;
+    public static final int MAX_GAME_LENGTH = 120000;
+    public static final int GAME_PORT = 1337;
+    public static final int MAX_NUM_PLAYERS = 6;
+    private int roundNumber = 1;
+
+    private short playerWithPotato;
+
+    private final HashMap<Short, PlayerState> players = new HashMap<Short, PlayerState>();
+    private Timer gameTimer;
+
+    private enum GameStatus {
+        LOBBY, INGAME, POSTGAME
+    };
+
+    private GameStatus currentStatus = GameStatus.LOBBY;
+
+    public static void main(String[] args) {
+        System.out.println("Attempting to start game server");
+        SharingServer gameServer = new SharingServer(GAME_PORT, DEBUG);
+        gameServer.run();
+    }
+
+    public SharingServer(int connectionListenerPort, boolean debug) {
+        super(connectionListenerPort, debug);
+    }
+
+    @Override
+    public void handleEvent(final NetworkEvent e) {
+        super.handleEvent(e);
+        // get the gameId aka the clientNumber
+        short gameId = e.getGameId();
+        if (e.getType().equals(PotatoType.SELECT_CHARACTER)) {
+            handleCharacterSelect(gameId, e.getData());
+        } else if (e.getType().equals(PotatoType.HIT_BY_POTATO)) {
+            handleHitByPotato(gameId, e.getData());
+        } else if (e.getType().equals(PotatoType.UPLOAD_SCORE)) {
+            handleUploadScore(gameId, e.getData());
+        } else if (e.getType().equals(PotatoType.START_GAME)) {
+            handleStartGame(gameId, e.getData());
+        } else if (e.getType().equals(PotatoType.QUIT_GAME)) {
+            handleQuitGame(gameId, e.getData());
+        }
+        // we shouldn't be receiving any other events
+    }
+
+    private void handleCharacterSelect(short gameId, Object data) {
+        if (currentStatus.equals(GameStatus.LOBBY)) {
+            short characterId = (Short) data;
+            // Someone is joining the game!
+            if (players.size() < MAX_NUM_PLAYERS) {
+                short[] newPlayerInfo = {gameId, characterId};
+                ClientConnection newClient = confirmedClientConnections.get(gameId);
+
+                for (PlayerState p : players.values()) {
+                    short[] otherClientInfo = {p.getGameId(), p.getCharacterId()};
+                    ClientConnection otherClient = confirmedClientConnections.get(p.getGameId());
+
+                    otherClient
+                            .sendEvent(new NetworkEvent(PotatoType.PLAYER_JOINED, newPlayerInfo));
+                    newClient
+                            .sendEvent(new NetworkEvent(PotatoType.PLAYER_JOINED, otherClientInfo));
+                }
+                PlayerState newPlayer = new PlayerState(gameId, characterId);
+                players.put(gameId, newPlayer);
+            } else {
+                // No more room :(
+                ClientConnection client = confirmedClientConnections.get(gameId);
+                client.sendEvent(new NetworkEvent(PotatoType.QUIT_GAME, "Error: too many players"));
+                client.kill();
+            }
+        } else {
+            // Can't join a game in progress
+            ClientConnection client = confirmedClientConnections.get(gameId);
+            client.sendEvent(new NetworkEvent(PotatoType.QUIT_GAME,
+                    "Error: game has already started"));
+            client.kill();
+        }
+    }
+
+    private void handleUploadScore(short gameId, Object data) {
+        if (currentStatus.equals(GameStatus.INGAME)) {
+            // Event was posted server side to request scores from clients
+            sendToAllClients(new NetworkEvent(PotatoType.UPLOAD_SCORE, null));
+            currentStatus = GameStatus.POSTGAME;
+        } else if (currentStatus.equals(GameStatus.POSTGAME)) {
+            int[] scoreData = (int[]) data;
+            players.get(gameId).setScoresSent(true);
+            for (int i = 0; i < scoreData.length; i += 2) {
+                PlayerState player = players.get(Short.valueOf((short) scoreData[i]));
+                player.setPotatoesShot(player.getPotatoesShot() + scoreData[i + 1]);
+            }
+
+            boolean allScoresReceived = true;
+            for (PlayerState p : players.values()) {
+                if (!p.scoresSent()) allScoresReceived = false;
+            }
+            if (allScoresReceived) {
+                // Update loser's loss tally
+                PlayerState loser = players.get(playerWithPotato);
+                loser.setLosses(loser.getLosses() + 1);
+                // Send each player the following data:
+                // 0 - game loser
+                // 1 - round number
+                // for each player: gameID, mini potatoes shot, total losses
+                int[] scores = new int[2 + (players.size() * 3)];
+                scores[0] = playerWithPotato;
+                scores[1] = roundNumber++;
+                int i = 2;
+                for (PlayerState p : players.values()) {
+                    scores[i++] = (int) p.getGameId();
+                    scores[i++] = p.getPotatoesShot();
+                    scores[i++] = p.getLosses();
+                    // Reset potatoes shot for next round
+                    p.setPotatoesShot(0);
+                    p.setScoresSent(false);
+                }
+                sendToAllClients(new NetworkEvent(PotatoType.END_GAME, scores));
+            }
+        }
+    }
+
+    private void handleHitByPotato(short gameId, Object data) {
+        short shooterId = (Short) data;
+
+        System.out.println("RECEIVED FROM: " + shooterId + ", TO: " + gameId);
+        
+        if (currentStatus.equals(GameStatus.INGAME) && shooterId == playerWithPotato) {
+            ClientConnection potatoToggler = confirmedClientConnections.get(shooterId);
+            potatoToggler.sendEvent(new NetworkEvent(PotatoType.TOGGLE_POTATO, null));
+            potatoToggler = confirmedClientConnections.get(gameId);
+            potatoToggler.sendEvent(new NetworkEvent(PotatoType.TOGGLE_POTATO, null));
+            
+            playerWithPotato = gameId;
+        }
+    }
+
+    private void handleQuitGame(short gameId, Object data) {
+        if (currentStatus.equals(GameStatus.LOBBY)) {
+            // Someone is leaving the lobby
+            if (DEBUG) System.out.println("Player " + gameId + " leaving game");
+            ClientConnection quitter = confirmedClientConnections.get(gameId);
+            quitter.sendEvent(new NetworkEvent(PotatoType.QUIT_GAME, null));
+
+            players.remove(gameId);
+            sendToAllClients(new NetworkEvent(PotatoType.PLAYER_LEFT, gameId));
+
+            quitter.kill();
+        } else if (currentStatus.equals(GameStatus.POSTGAME)) {
+            // If one player quits in postgame, all players are forced out
+            for (Short id : players.keySet()) {
+                ClientConnection client = confirmedClientConnections.get(id);
+                client.sendEvent(new NetworkEvent(PotatoType.QUIT_GAME, null));
+                client.kill();
+            }
+
+            // reset
+            players.clear();
+            roundNumber = 1;
+            currentStatus = GameStatus.LOBBY;
+        }
+    }
+
+    private void handleStartGame(short gameId, Object data) {
+        if (currentStatus.equals(GameStatus.LOBBY) || currentStatus.equals(GameStatus.POSTGAME)) {
+            PlayerState player = players.get(gameId);
+            player.setReady(true);
+            if (DEBUG) System.out.println("Player " + gameId + " ready");
+            boolean everyoneReady = true;
+            for (PlayerState p : players.values()) {
+                if (!p.isReady()) everyoneReady = false;
+            }
+            if (everyoneReady && players.size() > 1) {
+                // Let's start the game!
+                if (DEBUG) System.out.println("Everyone ready, starting game!");
+
+                gameTimer = new Timer();
+                Random rand = new Random();
+                gameTimer.schedule(new GameOverTask(),
+                        rand.nextInt(MAX_GAME_LENGTH - MIN_GAME_LENGTH) + MIN_GAME_LENGTH);
+
+                for (PlayerState p : players.values()) {
+                    ClientConnection client = confirmedClientConnections.get(p.getGameId());
+                    client.sendEvent(new NetworkEvent(PotatoType.START_GAME, p.getGameId()));
+                    p.setReady(false);
+                }
+                playerWithPotato = (Short) players.keySet().toArray()[rand.nextInt(players.size())];
+                ClientConnection client = confirmedClientConnections.get(playerWithPotato);
+                client.sendEvent(new NetworkEvent(PotatoType.TOGGLE_POTATO, null));
+
+                currentStatus = GameStatus.INGAME;
+            }
+        }
+    }
+
+    private class GameOverTask extends TimerTask {
+        @Override
+        public void run() {
+            enqueueEvent(new NetworkEvent(PotatoType.UPLOAD_SCORE, null));
+            gameTimer.cancel();
+        }
+    };
+
+    private void sendToAllClients(NetworkEvent event) {
+        for (Short id : players.keySet()) {
+            ClientConnection client = confirmedClientConnections.get(id);
+            if (client != null)
+                client.sendEvent(event);
+        }
+    }
+}

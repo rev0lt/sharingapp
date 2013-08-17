@@ -1,0 +1,81 @@
+package splat.minigames;
+
+import splat.potatoview.GameActivity;
+import android.view.View;
+
+public abstract class MinigameController {
+
+    protected GameActivity activity;
+    protected MinigameView gameView;
+
+    /**
+     * Override this and initialize view class and game mechanics. Will only happen once.
+     * 
+     * @author Mike
+     */
+    public void initialize(GameActivity activity, View view) {
+        this.activity = activity;
+    }
+
+    /**
+     * Override this when the minigame has been completed, but call the super function.
+     * 
+     * @author Mike
+     */
+    public void complete(int id) {
+        activity.minigameCompleted(id);
+    }
+
+    /**
+     * Override this when the minigame should be reset after completion
+     * 
+     * @author Mike
+     */
+    public void reset() {
+        gameView.reset();
+
+        System.gc();
+    }
+
+    /**
+     * Override this when the minigame is restarting and needs to be reinitialized
+     * 
+     * @author Sam
+     */
+    public void restart() {
+        gameView.restart();
+    }
+
+    protected abstract class MinigameView {
+        protected View view;
+
+        /**
+         * Override this and set up the game UI before playing
+         * 
+         * @author Mike
+         */
+        public void initialize() {}
+
+        /**
+         * Override this and reset the game UI after completion
+         * 
+         * @author Mike
+         */
+        public void reset() {}
+
+        /**
+         * Override this and reinitialize images when game is about to start again
+         * 
+         * @author Sam
+         */
+        public void restart() {}
+
+        public View getView() {
+            return view;
+        }
+
+        public void setView(View view) {
+            this.view = view;
+        }
+    }
+}

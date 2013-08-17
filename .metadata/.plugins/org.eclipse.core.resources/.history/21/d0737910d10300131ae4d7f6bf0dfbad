@@ -1,0 +1,57 @@
+package splat.sharingcontroller;
+
+import network.NetworkEvent;
+import serverconnection.PingListener;
+import serverconnection.ServerConnection;
+import splat.Splat;
+import splat.OnDataReceiveListener;
+import splat.sharingview.ShootActivity;
+
+public class ShootController {
+	ShootActivity view;
+	private Splat splat;
+
+    public ShootController(ShootActivity view) {
+        this.view = view;
+        ServerConnection sc = NetworkController.getServerConnection();
+        if (sc != null) {
+            // We backed into this activity from the lobby
+            sc.setOnReceiveNetworkEventListener(new BackoutListener());
+        }
+        setupSplat();
+    }
+    
+    /**
+     * Sets up the splat device and its listeners.
+     * 
+     * @author sbobra
+     */
+    private void setupSplat() {
+        splat = Splat.getInstance();
+        splat.setOnDataReceiveListener(new OnDataReceiveListener() {
+            @Override
+            /**
+             * Sending/Receiving protocol:
+             * data bit 0 indicates whether it was a hot potato pass,
+             * or just a potato shoot. 0 is a hot potato pass, 1 is a potato shot.
+             * 
+             * data bits 1-3 is the player Id who sent the data.
+             * 
+             * @author josephsoltzberg
+             */
+            public void onDataReceive(Splat splat, byte data) {
+                //blah
+            }
+        });
+        splat.turnOnLed();
+    }
+    
+    private class BackoutListener extends PingListener {
+        @Override
+        public void onReceiveNetworkEvent(final ServerConnection serverConnection,
+                final NetworkEvent event) {
+            super.onReceiveNetworkEvent(serverConnection, event);
+            //implement me
+        }
+    }
+}

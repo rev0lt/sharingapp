@@ -1,0 +1,90 @@
+package splat.sharingcontroller;
+
+import network.NetworkEvent;
+import serverconnection.PingListener;
+import serverconnection.ServerConnection;
+import splat.Splat;
+import splat.OnDataReceiveListener;
+import splat.sharingview.ShootActivity;
+
+public class ShootController {
+	ShootActivity view;
+	private Splat splat;
+
+    public ShootController(ShootActivity view) {
+        this.view = view;
+        ServerConnection sc = NetworkController.getServerConnection();
+        if (sc != null) {
+            // We backed into this activity from the lobby
+            sc.setOnReceiveNetworkEventListener(new ShootListener());
+        }
+        setupSplat();
+    }
+    
+    /**
+     * Sets up the splat device and its listeners.
+     * 
+     * @author sbobra
+     */
+    private void setupSplat() {
+        splat = Splat.getInstance();
+        splat.setOnDataReceiveListener(new OnDataReceiveListener() {
+            @Override
+            public void onDataReceive(Splat splat, byte data) {
+                //blah
+            }
+        });
+        splat.turnOnLed();
+    }
+    
+    /**
+     * Called when user is shooting ID to another user
+     * 
+     * @author sbobra
+     */
+    public void shootInfo() {
+    	byte data = 0;
+        splat.sendData(data);
+    }
+    
+    private class ShootNetworkEventListener extends HandshakeListener {
+
+        @Override
+        public void onReceiveNetworkEvent(final ServerConnection sc, final NetworkEvent evt) {
+            super.onReceiveNetworkEvent(sc, evt);
+            if (evt.getType().equals(PotatoType.START_GAME)) {
+                sc.setOnReceiveNetworkEventListener(null);
+                lobbyActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        toGame((Short) evt.getData());
+                    }
+                });
+            } else if (evt.getType().equals(PotatoType.PLAYER_JOINED)) {
+                lobbyActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        short[] opponentInfo = (short[]) evt.getData();
+                        addOpponent(opponentInfo[0], opponentInfo[1]);
+                    }
+                });
+            } else if (evt.getType().equals(PotatoType.PLAYER_LEFT)) {
+                lobbyActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Short opponentClientId = (Short) evt.getData();
+                        removeOpponent(opponentClientId.shortValue());
+                    }
+                });
+            } else if (evt.getType().equals(PotatoType.QUIT_GAME)) {
+                lobbyActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String data = (String) evt.getData();
+                        quitGame(data);
+                    }
+                });
+            }
+        }
+    }
+}

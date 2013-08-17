@@ -1,0 +1,312 @@
+package splat.potatocontroller;
+
+import java.util.LinkedList;
+import java.util.Random;
+
+import network.NetworkEvent;
+import network.PotatoType;
+import serverconnection.HandshakeListener;
+import serverconnection.ServerConnection;
+import serverconnection.ServerConnection.OnDisconnectListener;
+import splat.OnDataReceiveListener;
+import splat.Splat;
+import splat.SplatColor;
+import splat.minigames.MinigameController;
+import splat.potatomodel.GameState;
+import splat.potatomodel.HardCoded;
+import splat.potatoview.GameActivity;
+import splat.potatoview.PostGameActivity;
+import android.content.Intent;
+import android.hardware.SensorEvent;
+import android.view.animation.Animation;
+import android.view.animation.RotateAnimation;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+
+public class GameController {
+
+    private static final float MOTION_THRESHOLD = 13f;
+    private static final int REMOVE_POTATO_DELAY = 450000000;
+    private static final int MINI_POTATO_SIZE = 150;
+
+    private GameActivity view;
+    private GameState state;
+    private LinkedList<ImageView> potatoesOnScreen;
+    private long lastMotionTime = 0;
+    private Splat splat;
+
+    private MinigameController[] minigames;
+    public MinigameController currentGame;
+
+    public GameController(GameActivity view) {
+        this.view = view;
+
+        this.state = GameState.getInstance();
+        state.setState(GameState.State.NO_POTATO); // GameState doesn't reset after the game
+                                                   // finishes
+        potatoesOnScreen = new LinkedList<ImageView>();
+        NetworkController.getServerConnection().setOnDisconnectListener(
+                new GameDisconnectListener());
+        NetworkController.getServerConnection().setOnReceiveNetworkEventListener(
+                new GameOnReceiveNetworkListener());
+        setupSplat();
+
+        initialize();
+    }
+
+    public void initialize() {
+        minigames = view.loadAllMinigames();
+    }
+
+    public void minigameCompleted() {
+        state.setState(GameState.State.HOT_POTATO);
+    }
+
+    public void loadMinigame() {
+        int id = view.loadMinigame();
+        currentGame = minigames[id];
+    }
+
+    public MinigameController getMiniGame(int id) {
+        return minigames[id];
+    }
+
+    public MinigameController getCurrentMiniGame() {
+        return currentGame;
+    }
+
+    private class GameOnReceiveNetworkListener extends HandshakeListener {
+        @Override
+        public void onReceiveNetworkEvent(final ServerConnection serverConnection,
+                final NetworkEvent event) {
+            super.onReceiveNetworkEvent(serverConnection, event);
+            if (event.getType().equals(PotatoType.TOGGLE_POTATO)) {
+                view.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        onTogglePotato();
+                    }
+                });
+            } else if (event.getType().equals(PotatoType.UPLOAD_SCORE)) {
+                view.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        onUploadScore();
+                    }
+                });
+            } else if (event.getType().equals(PotatoType.END_GAME)) {
+                view.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        int[] scores = (int[]) event.getData();
+                        onEndGame(scores);
+                    }
+                });
+            }
+        }
+    }
+
+    /**
+     * Called when a player is receiving the potato or has just passed it. Toggles the view.
+     * 
+     * @author Sam
+     */
+    public void onTogglePotato() {
+        state.togglePotato();
+
+        if (state.havePotato()) {
+            splat.setColor(SplatColor.RAZZMATAZZ);
+            loadMinigame();
+        } else {
+            splat.setColor(SplatColor.CYAN);
+            view.showNoPotato();
+        }
+    }
+
+    /**
+     * Called when the server wants the client to upload their score.
+     * 
+     * @author Sam
+     */
+    public void onUploadScore() {
+        int[] scores = new int[state.getClientIds().size() * 2];
+        int index = 0;
+        for (Short id : state.getClientIds()) {
+            scores[index++] = id;
+            scores[index++] = state.getPotatoesFromClientID(id);
+        }
+        state.setState(GameState.State.NON_GAME);
+        NetworkController.getServerConnection().sendEvent(
+                new NetworkEvent(PotatoType.UPLOAD_SCORE, scores));
+    }
+
+    /**
+     * Called when the game is over and final scores have been sent to each client. Starts the
+     * EndGameActivity.
+     * 
+     * @author Sam
+     */
+    public void onEndGame(int[] scores) {
+        splat.setOnDataReceiveListener(null);
+        NetworkController.getServerConnection().setOnReceiveNetworkEventListener(null);
+        NetworkController.getServerConnection().setOnDisconnectListener(null);
+        free();
+        Intent i = new Intent(view, PostGameActivity.class);
+        i.putExtra("scores", scores);
+        view.startActivity(i);
+        view.finish();
+    }
+
+    public void free() {
+        for (int i = 0; i < minigames.length; i++) {
+            minigames[i].reset();
+        }
+        view.free();
+        System.gc();
+    }
+
+    /**
+     * Called when shot by mini potato fired by opponent
+     * 
+     * @author Sam
+     */
+    public void onHitByPotato(short opponentId) {
+        state.addPotatoFromOpponent(opponentId);
+        int avatarId = HardCoded.getAvatar(state.getCharacterIDFromClientID(opponentId));
+
+        ImageView newPotato = new ImageView(view);
+        newPotato.setImageResource(avatarId);
+        Random rand = new Random();
+        int posX = rand.nextInt(view.getWidth() - MINI_POTATO_SIZE);
+        int posY = rand.nextInt(view.getHeight() - MINI_POTATO_SIZE);
+        final RelativeLayout.LayoutParams params =
+                new RelativeLayout.LayoutParams(MINI_POTATO_SIZE, MINI_POTATO_SIZE);
+        params.setMargins(posX, posY, 0, 0);
+        view.addPotatoToScreen(newPotato, params);
+        //rotate potato
+        float degrees = rand.nextInt(90) - 45;
+        Animation rotation = new RotateAnimation(degrees, degrees, 0.5f, 0.5f);
+        rotation.setDuration(0);
+        rotation.setFillAfter(true);
+        newPotato.startAnimation(rotation);
+        potatoesOnScreen.add(newPotato);
+    }
+
+    /**
+     * Called when phone is shaken and potatoes need to be cleared off screen
+     * 
+     * @author Sam
+     */
+    public void removePotatoes(int num) {
+        ImageView deadPotato;
+        for (int i = 0; i < num; i++) {
+            deadPotato = potatoesOnScreen.remove();
+            if (deadPotato != null) view.removePotatoFromScreen(deadPotato);
+        }
+    }
+
+    /**
+     * Given a sensorEvent, determines if there was an actually a shake and if there are potatoes to
+     * be removed, it will remove one. Will only activate every .45seconds.
+     * 
+     * @param sensorEvent
+     * 
+     * @author josephsoltzberg
+     */
+    public void handleSensorEvent(SensorEvent sensorEvent) {
+        if ((((Math.abs(sensorEvent.values[0]) > MOTION_THRESHOLD)
+                || (Math.abs(sensorEvent.values[1]) > MOTION_THRESHOLD) || (Math
+                .abs(sensorEvent.values[2]) > MOTION_THRESHOLD)))
+                && (potatoesOnScreen.size() > 0)
+                && ((sensorEvent.timestamp - lastMotionTime) > REMOVE_POTATO_DELAY)) {
+            lastMotionTime = sensorEvent.timestamp;
+            removePotatoes(1);
+        }
+    }
+
+    /**
+     * Sets up the splat device and its listeners.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupSplat() {
+        splat = Splat.getInstance();
+        splat.setOnDataReceiveListener(new OnDataReceiveListener() {
+            @Override
+            /**
+             * Sending/Receiving protocol:
+             * data bit 0 indicates whether it was a hot potato pass,
+             * or just a potato shoot. 0 is a hot potato pass, 1 is a potato shot.
+             * 
+             * data bits 1-3 is the player Id who sent the data.
+             * 
+             * @author josephsoltzberg
+             */
+            public void onDataReceive(Splat splat, byte data) {
+                byte bitmask = 1;
+                byte cmd = (byte) (data & bitmask);
+                bitmask = 14;// 1110
+                final byte msg = (byte) ((data & bitmask) >> 1);
+                if (cmd == 0 && state.existsOpponent((short) msg)
+                        && state.getState() == GameState.State.NO_POTATO) {
+                    NetworkController.getServerConnection().sendEvent(
+                            new NetworkEvent(PotatoType.HIT_BY_POTATO, (short) msg));
+                } else {
+                    view.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (state.existsOpponent((short) msg)) {
+                                onHitByPotato((short) msg);
+                            }
+                        }
+                    });
+                }
+            }
+        });
+        splat.turnOnLed();
+    }
+
+    /**
+     * To be called when a player wants to send a hot potato. Sends the data over Splat device.
+     * 
+     * @author josephsoltzberg
+     */
+    public void sendHotPotato() {
+        byte mask = 7;// 111
+        byte data = (byte) (((byte) (GameState.getInstance().getMyClientId() & mask)) << 1);
+        if (state.getState() == GameState.State.HOT_POTATO) splat.sendData(data);
+    }
+
+    /**
+     * To be called when a player wants to send a mini potato. Sends the data over Splat device.
+     * 
+     * @author josephsoltzberg
+     */
+    public void sendMiniPotato() {
+        byte mask = 7;// 111
+        byte clientId = (byte) (((byte) (GameState.getInstance().getMyClientId() & mask)) << 1);
+        byte data = (byte) (clientId | 1);
+        if (state.getState() == GameState.State.NO_POTATO) splat.sendData(data);
+    }
+
+    public MinigameController getMinigame(int id) {
+        return minigames[id];
+    }
+
+    /**
+     * Shows message on disconnect
+     * 
+     * @author Sam
+     */
+    public class GameDisconnectListener implements OnDisconnectListener {
+        @Override
+        public void onDisconnect(ServerConnection connection) {
+            view.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    view.showDisconnectDialog();
+                }
+            });
+        }
+    }
+}

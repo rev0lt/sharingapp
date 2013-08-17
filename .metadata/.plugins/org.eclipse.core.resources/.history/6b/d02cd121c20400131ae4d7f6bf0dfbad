@@ -1,0 +1,61 @@
+package splat.sharingcontroller;
+
+import network.NetworkEvent;
+import network.SharingType;
+import network.UserData;
+import serverconnection.HandshakeListener;
+import serverconnection.ServerConnection;
+import splat.sharingmodel.State;
+import splat.sharingview.EditActivity;
+
+public class EditController {
+	EditActivity view;
+
+    public EditController(EditActivity view) {
+        this.view = view;
+        ServerConnection sc = NetworkController.getServerConnection();
+        if (sc != null) {
+            // We backed into this activity from the lobby
+        	sc.setOnReceiveNetworkEventListener(new EditNetworkEventListener());
+        }
+    }
+    
+    private class EditNetworkEventListener extends HandshakeListener {
+
+		@Override
+		public void onReceiveNetworkEvent(final ServerConnection sc,
+				final NetworkEvent evt) {
+			super.onReceiveNetworkEvent(sc, evt);
+			if (evt.getType().equals(SharingType.UPDATE_USER)) {
+				int success = (Integer) evt.getData();
+				if (success == 1) {
+					
+				} else {
+					//error message
+				}
+				Object[] userArray = new Object[State.getInstance().getMe()
+						.serialize().length];
+				for (int i = 0; i < State.getInstance().getMe().serialize().length; i++) {
+					userArray[i] = dataArray[i];
+				}
+				UserData otherUserData = new UserData();
+				otherUserData.deserialize(userArray);
+				// TODO: display other user's info on screen
+				int permission = (Integer) dataArray[dataArray.length - 1];
+				if (permission == 0) {
+					// needs confirmation
+					//TODO: ALERT DIALOG. send event if press okay, if not, send nothing
+					sc.sendEvent(new NetworkEvent(SharingType.CONFIRM, otherUserData.getId()));
+				}
+				// else, transaction complete
+				
+				/*
+				 * lobbyActivity.runOnUiThread(new Runnable() {
+				 * 
+				 * @Override public void run() { toGame((Short) evt.getData());
+				 * } });
+				 */
+			}
+		}
+	}
+}

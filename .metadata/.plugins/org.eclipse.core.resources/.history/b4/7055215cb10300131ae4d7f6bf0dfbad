@@ -1,0 +1,71 @@
+package server;
+
+import java.util.HashMap;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import network.NetworkEvent;
+import network.PotatoType;
+
+public class SharingServer extends Server {
+
+    public static final boolean DEBUG = true;
+
+    public static final int MIN_GAME_LENGTH = 100000;
+    public static final int MAX_GAME_LENGTH = 120000;
+    public static final int GAME_PORT = 1337;
+    public static final int MAX_NUM_PLAYERS = 6;
+    private int roundNumber = 1;
+
+    private short playerWithPotato;
+
+    private final HashMap<Short, PlayerState> players = new HashMap<Short, PlayerState>();
+    private Timer gameTimer;
+
+    private enum GameStatus {
+        LOBBY, INGAME, POSTGAME
+    };
+
+    private GameStatus currentStatus = GameStatus.LOBBY;
+
+    public static void main(String[] args) {
+        System.out.println("Attempting to start game server");
+        SharingServer gameServer = new SharingServer(GAME_PORT, DEBUG);
+        gameServer.run();
+    }
+
+    public SharingServer(int connectionListenerPort, boolean debug) {
+        super(connectionListenerPort, debug);
+    }
+
+    @Override
+    public void handleEvent(final NetworkEvent e) {
+        super.handleEvent(e);
+        // get the gameId aka the clientNumber
+        short gameId = e.getGameId();
+        /*
+        if (e.getType().equals(PotatoType.SELECT_CHARACTER)) {
+            handleCharacterSelect(gameId, e.getData());
+        } else if (e.getType().equals(PotatoType.HIT_BY_POTATO)) {
+            handleHitByPotato(gameId, e.getData());
+        } else if (e.getType().equals(PotatoType.UPLOAD_SCORE)) {
+            handleUploadScore(gameId, e.getData());
+        } else if (e.getType().equals(PotatoType.START_GAME)) {
+            handleStartGame(gameId, e.getData());
+        } else if (e.getType().equals(PotatoType.QUIT_GAME)) {
+            handleQuitGame(gameId, e.getData());
+        }*/
+        // we shouldn't be receiving any other events
+    }
+
+    
+
+    private void sendToAllClients(NetworkEvent event) {
+        for (Short id : players.keySet()) {
+            ClientConnection client = confirmedClientConnections.get(id);
+            if (client != null)
+                client.sendEvent(event);
+        }
+    }
+}

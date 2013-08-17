@@ -1,0 +1,72 @@
+package splat.sharingcontroller;
+
+import network.NetworkEvent;
+import serverconnection.HandshakeListener;
+import serverconnection.HandshakeListener.OnConnectionConfirmedListener;
+import serverconnection.PingListener;
+import serverconnection.ServerConnection;
+import serverconnection.ServerConnection.OnDisconnectListener;
+import splat.sharingmodel.Settings;
+import splat.sharingview.LoginActivity;
+
+public class LoginController {
+	private LoginActivity view;
+	private LoginDisconnectListener loginDisconnectListener = new LoginDisconnectListener();
+
+	public LoginController(LoginActivity view) {
+		this.view = view;
+		ServerConnection sc = NetworkController.getServerConnection();
+		if (sc != null) {
+			// We backed into this activity from the lobby
+			sc.setOnReceiveNetworkEventListener(new BackoutListener());
+		}
+	}
+
+	public void toLobby() {
+		NetworkController.startConnection(Settings.getIp(), Settings.getPort(),
+				Settings.newId(), loginDisconnectListener);
+
+		NetworkController.getServerConnection().connect(
+				new HandshakeListener(new OnConnectionConfirmedListener() {
+					@Override
+					public void onConnectionConfirmed(
+							ServerConnection connection) {
+						connection.setOnReceiveNetworkEventListener(null);
+						connection.setOnDisconnectListener(null);
+						connection.sendEvent(new NetworkEvent(
+								SharingType.LOG_IN, (Short) GameState
+										.getInstance().getMyCharacterId()));
+						view.startActivity(new Intent(view, LobbyActivity.class));
+						view.finish();
+
+					}
+				}));
+	}
+
+	/**
+	 * Shows message on disconnect
+	 * 
+	 * @author Sam
+	 */
+	public class LoginDisconnectListener implements OnDisconnectListener {
+		@Override
+		public void onDisconnect(ServerConnection connection) {
+			view.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					// view.showDisconnectDialog();
+				}
+			});
+		}
+	}
+
+	private class BackoutListener extends PingListener {
+		@Override
+		public void onReceiveNetworkEvent(
+				final ServerConnection serverConnection,
+				final NetworkEvent event) {
+			super.onReceiveNetworkEvent(serverConnection, event);
+			// implement me
+		}
+	}
+}

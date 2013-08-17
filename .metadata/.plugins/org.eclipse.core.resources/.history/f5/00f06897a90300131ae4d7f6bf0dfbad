@@ -1,0 +1,153 @@
+package splat.potatocontroller;
+
+import network.NetworkEvent;
+import network.PotatoType;
+import serverconnection.HandshakeListener;
+import serverconnection.ServerConnection;
+import splat.potatomodel.GameState;
+import splat.potatomodel.HardCoded;
+import splat.potatoview.PostGameActivity;
+
+public class PostGameController {
+
+    /**
+     * Holds all data relevant to a player in the post game.
+     * 
+     * @author josephsoltzberg
+     */
+    public class PostGamePlayer {
+
+        private int id;
+        private int potatoesShot;
+        private int roundsLost;
+        private boolean isLoser;
+
+        public PostGamePlayer(final int id, final int potatoesShot, final int roundsLost,
+                final boolean isLoser) {
+            this.id = id;
+            this.potatoesShot = potatoesShot;
+            this.roundsLost = roundsLost;
+            this.isLoser = isLoser;
+        }
+
+        public int getId() {
+            return this.id;
+        }
+
+        public int getPotatoesShot() {
+            return this.potatoesShot;
+        }
+
+        public boolean isLoser() {
+            return this.isLoser;
+        }
+
+        public int getRoundsLost() {
+            return this.roundsLost;
+        }
+    }
+
+    private class PostGameNetworkEventListener extends HandshakeListener {
+
+        public PostGameNetworkEventListener() {
+            super();
+        }
+
+        @Override
+        public void onReceiveNetworkEvent(final ServerConnection sc, final NetworkEvent evt) {
+            super.onReceiveNetworkEvent(sc, evt);
+            if (evt.getType().equals(PotatoType.START_GAME)) {
+                restartGame();
+            } else if (evt.getType().equals(PotatoType.QUIT_GAME)) {
+                toHome();
+            }
+        }
+    }
+
+    /**
+     * Restarts the game
+     * 
+     * @author josephsoltzberg
+     */
+    public void restartGame() {
+        NetworkController.getServerConnection().setOnReceiveNetworkEventListener(null);
+        NetworkController.getServerConnection().setOnDisconnectListener(null);
+        GameState.getInstance().resetScores();
+        postGameActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                postGameActivity.free();
+                postGameActivity.restartGame();
+            }
+        });
+    }
+
+    private final PostGameActivity postGameActivity;
+    private PostGamePlayer[] playerList;
+    private int roundNumber;
+
+    public PostGameController(PostGameActivity postGameActivity) {
+        this.postGameActivity = postGameActivity;
+        NetworkController.getServerConnection().setOnReceiveNetworkEventListener(
+                new PostGameNetworkEventListener());
+    }
+
+    public PostGamePlayer[] getPlayerList() {
+        return playerList;
+    }
+
+    /**
+     * Notifies the server that the player wants to restart the game.
+     * 
+     * @author josephsoltzberg
+     */
+    public void restartSelected() {
+        NetworkController.getServerConnection().sendEvent(
+                new NetworkEvent(PotatoType.START_GAME, null));
+    }
+
+    /**
+     * Notifies the server the player wants to quit and resets data.
+     * 
+     * @author josephsoltzberg
+     */
+    public void homeSelected() {
+        NetworkController.getServerConnection().sendEvent(
+                new NetworkEvent(PotatoType.QUIT_GAME, null));
+    }
+
+    public void toHome() {
+        NetworkController.closeConnection();
+        GameState.resetAll();
+        postGameActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                postGameActivity.free();
+                postGameActivity.goHome();
+            }
+        });
+    }
+
+    /**
+     * Given the stats data, populates the player list and sets the current round #.
+     * 
+     * @param statsData
+     * 
+     * @author josephsoltzberg
+     */
+    public void createPlayerList(int[] statsData) {
+        int loserId = statsData[0];
+        this.roundNumber = statsData[1];
+        int playerListIndex = 0;
+        playerList = new PostGamePlayer[(statsData.length - 2) / 3];
+        for (int i = 2; i < statsData.length; i += 3) {
+            boolean isLoser = loserId == statsData[i];
+            playerList[playerListIndex++] =
+                    new PostGamePlayer(statsData[i], statsData[i + 1], statsData[i + 2], isLoser);
+        }
+    }
+
+    public int getRoundNumber() {
+        return roundNumber;
+    }
+}

@@ -1,0 +1,18 @@
+package splat.potatocontroller;
+
+public class HotPotatoController {
+    
+    private GameController gameController;
+    
+    public HotPotatoController(GameController gameController) {
+        this.gameController = gameController;
+    }
+    
+    /**
+     * Shoots the potato at the other player.
+     */
+    public void shootPotato() {
+        gameController.sendHotPotato();
+    }
+
+}

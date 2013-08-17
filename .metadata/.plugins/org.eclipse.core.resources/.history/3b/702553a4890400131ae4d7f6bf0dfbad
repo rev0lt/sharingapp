@@ -1,0 +1,55 @@
+package network;
+
+public class UserData {
+    String username, password, email, facebook, twitter, linkedin;
+    int phone;
+
+
+    public UserData() {
+        username = "";
+        password = "";
+        email = "";
+        facebook = "";
+        twitter = "";
+        linkedin = "";
+        phone = 0;
+    }
+
+    public Object[] serialize() {
+        Object[] data = new Object[7];
+        data[0] = username;
+        data[1] = password;
+        data[2] = email;
+        data[3] = facebook;
+        data[4] = twitter;
+        data[5] = linkedin;
+        data[6] = (Integer) phone;
+        return data;
+    }
+
+    public void deserialize(Object[] data) {
+        username = (String) data[0];
+        password = (String) data[1];
+        email = (String) data[2];
+        data[3] = (String) facebook;
+        data[4] = (String) twitter;
+        data[5] = linkedin;
+        data[6] = (Integer) phone;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String s) {
+        username = s;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String s) {
+        password = s;
+    }
+}

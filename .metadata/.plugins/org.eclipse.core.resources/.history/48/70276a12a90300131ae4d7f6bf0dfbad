@@ -1,0 +1,108 @@
+package splat.minigames;
+
+import splat.customui.FingerTrail;
+import splat.customui.FingerTrail.TrailListener;
+import splat.potato.R;
+import splat.potatoview.GameActivity;
+import splat.potatoview.ViewUtils;
+import splat.potatoview.GameActivity.Minigames;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+
+public class SlicingMinigame extends MinigameController implements TrailListener {
+
+    private static final int NUMBER_OF_FRIES = 5;
+
+    private int friesLeft;
+
+    @Override
+    public void initialize(GameActivity activity, View view) {
+        super.initialize(activity, view);
+
+        gameView = new SlicingMinigameView();
+        gameView.setView(view);
+        gameView.initialize();
+
+        FingerTrail.listener = this;
+
+        friesLeft = NUMBER_OF_FRIES;
+        restart();
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+    }
+
+    @Override
+    public void restart() {
+        friesLeft = NUMBER_OF_FRIES;
+        super.restart();
+    }
+
+    @Override
+    public void trailCompleted() {
+        friesLeft--;
+
+        if (friesLeft <= 0) {
+            complete(Minigames.MINIGAME_SLICING.index());
+        }
+
+        ((SlicingMinigameView) gameView).updateProgress(friesLeft, NUMBER_OF_FRIES);
+    }
+
+    private class SlicingMinigameView extends MinigameView {
+        private ProgressBar progress;
+
+        private ImageView uncutPotato;
+        private ImageView cutFries;
+
+        @Override
+        public void initialize() {
+            FingerTrail.validRectangle = (ImageView) view.findViewById(R.id.slicing_valid_box);
+
+            progress = (ProgressBar) view.findViewById(R.id.slicing_progress);
+
+            uncutPotato = (ImageView) view.findViewById(R.id.slicing_image);
+            cutFries = (ImageView) view.findViewById(R.id.sliced_fries);
+        }
+
+        @Override
+        public void reset() {
+            super.reset();
+            ViewUtils.free(cutFries);
+            ViewUtils.free(uncutPotato);
+        }
+
+        @Override
+        public void restart() {
+            uncutPotato.setImageResource(R.drawable.potato);
+            cutFries.setImageResource(R.drawable.fries);
+            cutFries.setVisibility(View.INVISIBLE);
+
+            updateProgress(1, 1);
+        }
+
+        @SuppressWarnings("deprecation")
+        public void updateProgress(int num, int total) {
+            int version = android.os.Build.VERSION.SDK_INT;
+
+            float toDone = (float) num / (float) total;
+
+            if (version >= 11) {
+                uncutPotato.setAlpha(toDone);
+                cutFries.setAlpha(1 - toDone);
+            } else {
+                int toDoneInt = (int) Math.floor(255.0 * toDone);
+
+                uncutPotato.setAlpha(toDoneInt);
+                cutFries.setAlpha(255 - toDoneInt);
+            }
+            cutFries.setVisibility(View.VISIBLE);
+
+            progress.setMax(total);
+            progress.setProgress(total - num);
+        }
+    }
+}

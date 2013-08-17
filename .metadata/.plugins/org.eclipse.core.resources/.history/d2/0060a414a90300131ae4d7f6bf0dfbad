@@ -1,0 +1,121 @@
+package splat.customui;
+
+import android.content.Context;
+import android.graphics.PixelFormat;
+import android.util.AttributeSet;
+import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+
+public class PotatoSwipeDetector extends SurfaceView implements SurfaceHolder.Callback {
+
+    /**
+     * Custom listener to be called when a valid swipe is detected.
+     * 
+     * @author josephsoltzberg
+     */
+    public interface OnSwipeListener {
+
+        public void onSwipeDetected();
+
+    }
+
+    private static final float PERCENT_SCREEN_TO_TRIGGER_ANIMATION = 0.2f;
+
+    private OnSwipeListener onSwipeListener;
+    private long pressTime = 0;
+    private float previousY = 0;
+    private float startingY = 0;
+    private boolean swipeActivated = false;
+
+    public PotatoSwipeDetector(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        this.setZOrderOnTop(true);
+        getHolder().addCallback(this);
+        getHolder().setFormat(PixelFormat.TRANSPARENT);
+        setFocusable(true);
+        setFocusableInTouchMode(true);
+    }
+
+    /**
+     * Sets up the swipe detector listener.
+     * 
+     * @param onSwipeListener
+     * 
+     * @author josephsoltzberg
+     */
+    public void setOnSwipeListener(OnSwipeListener onSwipeListener) {
+        this.onSwipeListener = onSwipeListener;
+    }
+
+    /**
+     * Handles touch and scroll events on the view.
+     * 
+     * @param event - Motion event.
+     * @return True.
+     * 
+     * @author josephsoltzberg
+     */
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if ((event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_MOVE) {
+            if (event.getDownTime() != this.pressTime) {
+                startNewSwipe(event);
+            } else {
+                if (event.getY() >= this.previousY) {
+                    previousY = event.getY();
+                } else {
+                    if (shouldActivateSwipe(event.getY())) {
+                        activateSwipe();
+                    }
+                    previousY = event.getY();
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Sets up variables associated with a new swipe.
+     * 
+     * @param event
+     * 
+     * @author josephsoltzberg
+     */
+    private void startNewSwipe(MotionEvent event) {
+        swipeActivated = false;
+        startingY = event.getY();
+        pressTime = event.getDownTime();
+        previousY = event.getY();
+    }
+
+    /**
+     * @return True if the swipe was long enough to trigger the animation sending the potato.
+     * 
+     * @author josephsoltzberg
+     */
+    public boolean shouldActivateSwipe(final float currentY) {
+        final float swipeDistance = startingY - currentY;
+        return (swipeDistance >= this.getHeight() * PERCENT_SCREEN_TO_TRIGGER_ANIMATION)
+                && !swipeActivated;
+    }
+
+    /**
+     * Sends a message to the listener that a swipe was detected.
+     * 
+     * @author josephsoltzberg
+     */
+    public void activateSwipe() {
+        swipeActivated = true;
+        onSwipeListener.onSwipeDetected();
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder arg0, int arg1, int arg2, int arg3) {}
+
+    @Override
+    public void surfaceCreated(SurfaceHolder arg0) {}
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder arg0) {}
+}

@@ -1,0 +1,19 @@
+package network;
+
+public class UserData {
+    String username, password, email, facebook, twitter;
+    
+
+    public UserData() {
+        
+    }
+    
+    private class BackoutListener extends PingListener {
+        @Override
+        public void onReceiveNetworkEvent(final ServerConnection serverConnection,
+                final NetworkEvent event) {
+            super.onReceiveNetworkEvent(serverConnection, event);
+            //implement me
+        }
+    }
+}

@@ -1,0 +1,259 @@
+package splat.potatoview;
+
+import splat.potato.R;
+import splat.potatocontroller.PostGameController;
+import splat.potatocontroller.PostGameController.PostGamePlayer;
+import splat.potatomodel.GameState;
+import splat.potatomodel.HardCoded;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.os.Bundle;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.style.ForegroundColorSpan;
+import android.view.Gravity;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.ScrollView;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.TextView;
+
+public class PostGameActivity extends Activity {
+
+    private static int AVATAR_SIZE = 175;
+    private static int TEXTVIEW_SIZE = 150;
+    private static int TEXT_SIZE = 40;
+    private static int TEXTVIEW_TOP_PADDING = -20;
+    private static int LEFT_TABLE_ITEM_PADDING = 50;
+    private static int ROW_SPACING = 20;
+    private static String ALERT_DIALOG_MESSAGE = "Leave game?";
+    private static String ALERT_BUTTON_POSITIVE_TEXT = "Yes";
+    private static String ALERT_BUTTON_NEGATIVE_TEXT = "Cancel";
+
+
+    private PostGameController postGameController;
+    private AlertDialog alertDialog;
+    private ImageView[] displayedAvatars;
+
+    @Override
+    public void onCreate(Bundle bundle) {
+        super.onCreate(bundle);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        setContentView(R.layout.activity_postgame);
+        postGameController = new PostGameController(this);
+        /* Unpackage and setup "scores" extra. */
+        postGameController.createPlayerList((int[]) getIntent().getExtras().get("scores"));
+        /* Setup view elements. */
+        setupPlayerListView();
+        setupRestartButton();
+        setupHomeButton();
+        setupRoundNumber();
+        setupFont();
+    }
+
+    public void showAlertDialog() {
+        alertDialog =
+                new AlertDialog.Builder(this)
+                        .setTitle(ALERT_DIALOG_MESSAGE)
+                        .setPositiveButton(ALERT_BUTTON_POSITIVE_TEXT,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        ImageView home =
+                                                (ImageView) findViewById(R.id.postgame_home);
+                                        home.setEnabled(false);
+                                        ViewUtils.setAlpha(home, 0.5f);
+                                        postGameController.homeSelected();
+                                        alertDialog.dismiss();
+                                    }
+                                })
+                        .setNegativeButton(ALERT_BUTTON_NEGATIVE_TEXT,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        alertDialog.dismiss();
+                                    }
+                                }).create();
+        alertDialog.show();
+    }
+
+    /**
+     * Sets up the round number.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupRoundNumber() {
+        TextView rounds = (TextView) findViewById(R.id.postgame_round_number);
+        Typeface font = Typeface.createFromAsset(getAssets(), "fonts/MyriadPro-Regular.otf");
+        rounds.setTypeface(font);
+        rounds.setText("" + postGameController.getRoundNumber());
+    }
+
+    /**
+     * Sets up the scroll view containing rows with a player avatar, their loss count, and the
+     * number of potatoes they shoot.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupPlayerListView() {
+        Typeface font = Typeface.createFromAsset(getAssets(), "fonts/MyriadPro-Regular.otf");
+        ScrollView playerListView = (ScrollView) this.findViewById(R.id.postgame_playerlist);
+        TableLayout playerListLayout = (TableLayout) playerListView.getChildAt(0);
+        PostGamePlayer[] players = postGameController.getPlayerList();
+        displayedAvatars = new ImageView[players.length];
+        for (int i = 0; i < players.length; i++) {
+            TableRow playerInfoBar = new TableRow(this);
+            /* Insert avatar. */
+            displayedAvatars[i] = new ImageView(this);
+            if (GameState.getInstance().getCharacterIDFromClientID(
+                    Short.valueOf((short) players[i].getId())) != null) {
+                displayedAvatars[i].setImageResource(HardCoded.getAvatar(GameState.getInstance()
+                        .getCharacterIDFromClientID((short) players[i].getId())));
+            } else {
+                displayedAvatars[i].setImageResource(HardCoded.getAvatar(GameState.getInstance()
+                        .getMyCharacterId()));
+            }
+            displayedAvatars[i]
+                    .setLayoutParams(new TableRow.LayoutParams(AVATAR_SIZE, AVATAR_SIZE));
+            displayedAvatars[i].setPadding(LEFT_TABLE_ITEM_PADDING, 0, 0, 0);
+            playerInfoBar.addView(displayedAvatars[i]);
+            /* Insert rounds lost #. */
+            TextView roundsLost = new TextView(this);
+            final SpannableStringBuilder string =
+                    new SpannableStringBuilder(players[i].getRoundsLost() + "");
+            if (players[i].isLoser()) {
+                final ForegroundColorSpan highlight = new ForegroundColorSpan(Color.YELLOW);
+                string.append("*");
+                string.setSpan(highlight, string.length() - 1, string.length(),
+                        Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+            }
+            roundsLost.setTypeface(font);
+            roundsLost.setTextColor(Color.WHITE);
+            roundsLost.setGravity(Gravity.CENTER);
+            roundsLost.setText(string);
+            roundsLost.setTextSize(TEXT_SIZE);
+            roundsLost.setLayoutParams(new TableRow.LayoutParams(TEXTVIEW_SIZE, TEXTVIEW_SIZE));
+            roundsLost.setPadding(LEFT_TABLE_ITEM_PADDING, TEXTVIEW_TOP_PADDING, 0, 0);
+            playerInfoBar.addView(roundsLost);
+            /* Insert potatoes sent #. */
+            TextView potatoesSent = new TextView(this);
+            potatoesSent.setTypeface(font);
+            potatoesSent.setTextColor(Color.WHITE);
+            potatoesSent.setGravity(Gravity.CENTER);
+            potatoesSent.setText(players[i].getPotatoesShot() + "");
+            potatoesSent.setTextSize(TEXT_SIZE);
+            potatoesSent.setLayoutParams(new TableRow.LayoutParams(TEXTVIEW_SIZE, TEXTVIEW_SIZE));
+            potatoesSent.setPadding(LEFT_TABLE_ITEM_PADDING, TEXTVIEW_TOP_PADDING, 0, 0);
+            playerInfoBar.addView(potatoesSent);
+            /* Add bar. */
+            playerInfoBar.setPadding(0, 0, 0, ROW_SPACING);
+            playerListLayout.addView(playerInfoBar);
+        }
+    }
+
+    /**
+     * Turns all of the text to MyriadPro font.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupFont() {
+        Typeface font = Typeface.createFromAsset(getAssets(), "fonts/MyriadPro-Regular.otf");
+        TextView player = (TextView) findViewById(R.id.postgame_player_text);
+        player.setTypeface(font);
+        TextView losses = (TextView) findViewById(R.id.postgame_losses_text);
+        losses.setTypeface(font);
+        TextView potatoes = (TextView) findViewById(R.id.postgame_potatoes_text);
+        potatoes.setTypeface(font);
+    }
+
+    /**
+     * Sets up the restart button so that it will return the player to the game lobby.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupRestartButton() {
+        final ImageView restart = (ImageView) findViewById(R.id.postgame_restart);
+        restart.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                ImageView restart = (ImageView) findViewById(R.id.postgame_restart);
+                restart.setEnabled(false);
+                ViewUtils.setAlpha(restart, 0.5f);
+                postGameController.restartSelected();
+                restart.setVisibility(View.INVISIBLE);
+                ImageView home = (ImageView) findViewById(R.id.postgame_home);
+                home.setVisibility(View.INVISIBLE);
+                TextView waiting = (TextView) findViewById(R.id.postgame_waiting_message);
+                waiting.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    /**
+     * Sets up the home button so that it will quit the player out of the game.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupHomeButton() {
+        ImageView home = (ImageView) findViewById(R.id.postgame_home);
+        home.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showAlertDialog();
+            }
+        });
+    }
+
+    /**
+     * Sends the player back to the original activity.
+     * 
+     * @author josephsoltzberg
+     */
+    public void goHome() {
+        PostGameActivity.this.startActivity(new Intent(PostGameActivity.this, StartActivity.class));
+        PostGameActivity.this.finish();
+    }
+
+    /**
+     * Restarts the game with respect to the activities.
+     * 
+     * @author josephsoltzberg
+     */
+    public void restartGame() {
+        startActivity(new Intent(this, GameActivity.class));
+        finish();
+    }
+
+    /**
+     * Free activity resources when restarting or quitting game
+     * 
+     * @author sbobra
+     */
+    public void free() {
+        ViewUtils.free((ImageView) findViewById(R.id.postgame_upper_divider));
+        ViewUtils.free((ImageView) findViewById(R.id.postgame_lower_divider));
+        ViewUtils.free((ImageView) findViewById(R.id.postgame_restart));
+        ViewUtils.free((ImageView) findViewById(R.id.postgame_home));
+        ViewUtils.free((ImageView) findViewById(R.id.postgame_round));
+        for (int i = 0; i < displayedAvatars.length; i++) {
+            ViewUtils.free(displayedAvatars[i]);
+        }
+        System.gc();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        postGameController = null;
+    }
+}

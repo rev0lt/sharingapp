@@ -1,0 +1,215 @@
+package splat.customui;
+
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.Point;
+import android.util.AttributeSet;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.ImageView;
+
+public class FingerTrail extends View {
+
+    public static ImageView validRectangle;
+    public static TrailListener listener;
+
+    private static final double MIN_CUT_DISTANCE = 250;
+    private static final int STROKE_WIDTH = 2;
+
+    private LinkedList<Trail> trails;
+    private Trail currentTrail;
+
+    private Timer upTimer;
+
+    private Paint paint;
+
+    public FingerTrail(Context context) {
+        super(context);
+
+        initialize();
+    }
+
+    public FingerTrail(Context context, AttributeSet attr) {
+        super(context, attr);
+
+        initialize();
+    }
+
+    public void initialize() {
+        trails = new LinkedList<Trail>();
+
+        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(STROKE_WIDTH);
+        paint.setColor(Color.BLACK);
+
+        setOnTouchListener(new View.OnTouchListener() {
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                boolean slice = false;
+
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    upTimer = new Timer();
+                    upTimer.scheduleAtFixedRate(new TimerTask() {
+
+                        @Override
+                        public void run() {
+                            postInvalidate();
+                        }
+
+                    }, 50, 50);
+
+                    if (currentTrail != null) {
+                        slice = currentTrail.checkLength();
+                        currentTrail = null;
+                    }
+                } else {
+                    if (upTimer != null) upTimer.cancel();
+
+                    Point finger = new Point((int) event.getX(), (int) event.getY());
+
+                    boolean valid = isValid(finger);
+
+                    if (valid) {
+                        if (event.getAction() == MotionEvent.ACTION_DOWN || currentTrail == null) {
+                            currentTrail = new Trail();
+                            currentTrail.addPoint(finger);
+
+                            trails.add(currentTrail);
+                        } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                            if (currentTrail == null) return true;
+
+                            currentTrail.addPoint(finger);
+                        }
+                    } else {
+                        if (currentTrail != null) {
+                            slice = currentTrail.checkLength();
+                            currentTrail = null;
+                        }
+                    }
+
+                    postInvalidate();
+                }
+
+                if (slice) {
+                    currentTrail = null;
+
+                    listener.trailCompleted();
+                }
+
+                return true;
+            }
+        });
+    }
+
+    public boolean isValid(Point p) {
+        int left = validRectangle.getLeft();
+        int right = validRectangle.getRight();
+
+        int top = validRectangle.getTop();
+        int bottom = validRectangle.getBottom();
+
+        if (p.x < right && p.x > left && p.y < bottom && p.y > top) {
+
+            return true;
+        }
+
+        return false;
+    }
+
+    @SuppressLint("DrawAllocation")
+    @Override
+    public void onDraw(Canvas canvas) {
+        if (trails.isEmpty()) {
+            if (upTimer != null) upTimer.cancel();
+        }
+
+        Iterator<Trail> iterator = trails.iterator();
+        while (iterator.hasNext()) {
+            Trail trail = iterator.next();
+
+            trail.limitPoints(20, 500);
+            if (trail.points.isEmpty()) iterator.remove();
+
+            Path path = new Path();
+
+            boolean first = true;
+            for (TimePoint p : trail.points) {
+                if (first) {
+                    first = false;
+                    path.moveTo(p.point.x, p.point.y);
+                } else {
+                    path.lineTo(p.point.x, p.point.y);
+                }
+            }
+
+            canvas.drawPath(path, paint);
+        }
+    }
+
+    public interface TrailListener {
+        public void trailCompleted();
+    }
+
+    private class Trail {
+        public LinkedList<TimePoint> points;
+
+        public Trail() {
+            points = new LinkedList<TimePoint>();
+        }
+
+        public void addPoint(Point p) {
+            TimePoint t = new TimePoint();
+
+            t.point = p;
+            t.time = System.currentTimeMillis();
+
+            points.add(t);
+        }
+
+        public boolean checkLength() {
+            double total = 0;
+
+            TimePoint last = points.getFirst();
+            for (int i = 1; i < points.size(); i++) {
+                TimePoint next = points.get(i);
+
+                total += last.distance(next);
+
+                last = next;
+            }
+
+            return (total > FingerTrail.MIN_CUT_DISTANCE);
+        }
+
+        public void limitPoints(int count, long time) {
+            long current = System.currentTimeMillis();
+
+            while (points.size() > count
+                    || (points.size() != 0 && current - points.getFirst().time > time))
+                points.removeFirst();
+        }
+    }
+
+    private class TimePoint {
+        public Point point;
+        public long time;
+
+        public double distance(TimePoint other) {
+            double dx = point.x - other.point.x;
+            double dy = point.y - other.point.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+    }
+
+}

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/potato_blue"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/character_select_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:text="@string/character_select_character"
+        android:textSize="20sp"
+        android:textColor="@color/white" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:baselineAligned="false"
+        android:orientation="horizontal" >
+
+        <ImageView
+            android:id="@+id/character_hipster"
+            android:layout_width="80dp"
+            android:layout_height="99dp"
+            android:layout_weight="1"
+            android:contentDescription="@string/none"
+            android:src="@drawable/character_hipster" />
+
+        <ImageView
+            android:id="@+id/character_girl"
+            android:layout_width="80dp"
+            android:layout_height="99dp"
+            android:layout_weight="1"
+            android:contentDescription="@string/none"
+            android:src="@drawable/character_girl" />
+
+        <ImageView
+            android:id="@+id/character_wizard"
+            android:layout_width="80dp"
+            android:layout_height="99dp"
+            android:layout_weight="1"
+            android:contentDescription="@string/none"
+            android:src="@drawable/character_wizard" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="5dp"
+        android:baselineAligned="false"
+        android:orientation="horizontal" >
+
+        <ImageView
+            android:id="@+id/character_astronaut"
+            android:layout_width="80dp"
+            android:layout_height="99dp"
+            android:layout_weight="1"
+            android:contentDescription="@string/none"
+            android:src="@drawable/character_astronaut" />
+
+        <ImageView
+            android:id="@+id/character_kitty"
+            android:layout_width="80dp"
+            android:layout_height="99dp"
+            android:layout_weight="1"
+            android:contentDescription="@string/none"
+            android:src="@drawable/character_kitty" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:baselineAligned="false"
+        android:orientation="horizontal" >
+
+        <ImageView
+            android:id="@+id/character_ninja"
+            android:layout_width="80dp"
+            android:layout_height="99dp"
+            android:layout_weight="1"
+            android:contentDescription="@string/none"
+            android:src="@drawable/character_ninja" />
+
+        <ImageView
+            android:id="@+id/character_superhero"
+            android:layout_width="80dp"
+            android:layout_height="99dp"
+            android:layout_weight="1"
+            android:contentDescription="@string/none"
+            android:src="@drawable/character_superhero" />
+
+        <ImageView
+            android:id="@+id/character_knight"
+            android:layout_width="80dp"
+            android:layout_height="99dp"
+            android:layout_weight="1"
+            android:contentDescription="@string/none"
+            android:src="@drawable/character_knight" />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
+
+        <LinearLayout
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="5dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal" >
+
+            <ImageView
+                android:id="@+id/character_pirate"
+                android:layout_width="80dp"
+                android:layout_height="99dp"
+                android:layout_weight="1"
+                android:contentDescription="@string/none"
+                android:src="@drawable/character_pirate" />
+
+            <ImageView
+                android:id="@+id/character_sir"
+                android:layout_width="80dp"
+                android:layout_height="99dp"
+                android:layout_weight="1"
+                android:contentDescription="@string/none"
+                android:src="@drawable/character_sir" />
+        </LinearLayout>
+        
+        <ImageView
+            android:id="@+id/character_next_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="@string/none"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginBottom="20dp"
+            android:layout_marginRight="7dp" 
+            android:src="@drawable/character_next_button" />
+    </RelativeLayout>
+
+</LinearLayout>

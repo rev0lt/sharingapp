@@ -1,0 +1,656 @@
+package server;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+
+import net.common.AccountTransferable;
+import net.common.stats.EndGameStats;
+import net.common.stats.EndGameStats.EndGameSelfStats;
+
+public class DataAccessor {
+
+    /* These variable values are used to setup the Connection object */
+
+    static final String URL = "jdbc:mysql://97.107.141.233:3306/laser";
+    static final String USER = "admin";
+    static final String PASSWORD = "zetr2qas";
+    static final String DRIVER = "com.mysql.jdbc.Driver";
+
+    /* Creates a connection using the values listed above. */
+    public Connection getConnection() throws SQLException {
+        Connection con = null;
+        try {
+            Class.forName(DRIVER).newInstance();
+            con = DriverManager.getConnection(URL, USER, PASSWORD);
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return con;
+    }
+
+    /*
+     * Given a list of Facebook IDs, return a list of Splat account IDs and usernames corresponding
+     * to which of the Facebook users have splat accounts. Empty array if none found.
+     */
+    public ArrayList<Object[]> getSplatFriends(String[] fbIDs) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        ArrayList<Object[]> splatFriends = new ArrayList<Object[]>();
+        if (fbIDs.length == 0) return splatFriends;
+        StringBuilder fb_ids = new StringBuilder("(");
+        for (int i = 0; i < fbIDs.length; i++) {
+            fb_ids.append(fbIDs[i]);
+            if (i != fbIDs.length - 1) {
+                fb_ids.append(",");
+            }
+        }
+        fb_ids.append(")");
+        try {
+            con = getConnection();
+            pst =
+                    con.prepareStatement("SELECT id, username FROM users WHERE fb_id IN "
+                            + fb_ids.toString());
+            rs = pst.executeQuery();
+            while (rs.next()) {
+                Object[] friend = new Object[2];
+                friend[0] = rs.getInt("id");
+                friend[1] = rs.getString("username");
+                splatFriends.add(friend);
+            }
+            return splatFriends;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return null;
+        } finally {
+            closeThings(pst, con);
+        }
+
+    }
+
+    /*
+     * Adds a new user to the database with the given information. Any field may be null, and will
+     * get translated to a NULL in the DB. Returns the AccountTransferable of the newly created
+     * user, null on failure/error.
+     */
+    public AccountTransferable addUser(String name, String pwd, String email, String fbid,
+            String twname) {
+        int verify = 0;
+
+        // Check for excessively long emails
+        if (email != null && email.length() > 64) {
+            AccountTransferable acc = new AccountTransferable();
+            acc.setErrMsg("Your email address is too long!");
+            return acc;
+        }
+        // Truncate username to fit in our database
+        if (name != null && name.length() > 16) {
+            name = name.substring(0, 16);
+        }
+
+        if (email != null) {
+            if (findEmail(email)) {
+                AccountTransferable acc = new AccountTransferable();
+                acc.setErrMsg("An account already exists with this email. "
+                        + "Try connecting through Facebook or Twitter.");
+                return acc;
+            }
+            if (fbid == null)
+                Emailer.sendVerifyEmail(email);
+            else
+                verify = 1;
+        }
+
+        Connection con = null;
+        PreparedStatement pst = null;
+        Statement st = null;
+        ResultSet rs = null;
+        try {
+            con = getConnection();
+            String sql =
+                    "INSERT INTO users(username, password, email,"
+                            + "fb_id, tw_name, email_verify) VALUES(?,?,?,?,?,?)";
+            pst = con.prepareStatement(sql);
+            if (name != null)
+                pst.setString(1, name);
+            else
+                pst.setString(1, "SPLAT Player");
+            if (pwd != null)
+                pst.setString(2, pwd);
+            else
+                pst.setNull(2, Types.CHAR);
+            if (email != null)
+                pst.setString(3, email);
+            else
+                pst.setNull(3, Types.VARCHAR);
+            if (fbid != null)
+                pst.setString(4, fbid);
+            else
+                pst.setNull(4, Types.VARCHAR);
+            if (twname != null)
+                pst.setString(5, twname);
+            else
+                pst.setNull(5, Types.VARCHAR);
+            pst.setInt(6, verify);
+            pst.executeUpdate();
+
+            // get most recently created auto-inc ID
+            st = con.createStatement();
+            rs = st.executeQuery("SELECT LAST_INSERT_ID()");
+            rs.next();
+            int uid = rs.getInt(1);
+
+            boolean v = (verify == 1) ? true : false;
+            AccountTransferable acc =
+                    new AccountTransferable(uid, name, email, fbid, twname, null, null, v);
+            return acc;
+        } catch (SQLException ex) {
+            System.out.println(ex.toString());
+            ex.printStackTrace();
+            AccountTransferable acc = new AccountTransferable();
+            acc.setErrMsg("Sorry! There was an error, please try again.");
+            return acc;
+        } finally {
+            closeThings(pst, con);
+        }
+    }
+
+    /* Returns a ResultSet with all current users in the database */
+    public ResultSet getUsers() {
+        Connection con = null;
+        Statement s = null;
+        ResultSet rs = null;
+        try {
+            con = getConnection();
+            s = con.createStatement();
+            rs = s.executeQuery("SELECT id, username, email, fb_id, tw_name FROM users");
+            return rs;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return rs;
+        } finally {
+            try {
+                if (s != null) s.close();
+                if (con != null) con.close();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    /*
+     * Attempts to authenticate a user and return their AccountTransferable. If the authentication
+     * fails, it returns a mostly null account with a non-null error message.
+     */
+    public AccountTransferable authUser(String email, String pw) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        String userEmail = email;
+        AccountTransferable acc = new AccountTransferable();
+        try {
+            con = getConnection();
+            pst = con.prepareStatement("SELECT * FROM users WHERE email = ?");
+            pst.setString(1, userEmail);
+            rs = pst.executeQuery();
+            if (!rs.next()) {
+                acc.setErrMsg("Email address not in our records");
+            } else if (rs.getInt("email_verify") != 1) {
+                acc.setErrMsg("Account not verified, check your email");
+            } else if (rs.getString("password") == null) {
+                acc.setErrMsg("This account has no password. Log in through Facebook/Twitter"
+                        + "to add one.");
+            } else if (!rs.getString("password").equals(pw)) {
+                acc.setErrMsg("Invalid email/password combination");
+            } else {
+                acc.setEmail(rs.getString("email"));
+                acc.setFbId(rs.getString("fb_id"));
+                acc.setTwitterName(rs.getString("tw_name"));
+                acc.setUserId(rs.getInt("id"));
+                acc.setUserName(rs.getString("username"));
+                boolean v = (rs.getInt("email_verify") == 1) ? true : false;
+                acc.setEmailVerify(v);
+            }
+            return acc;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            acc.setErrMsg("SQL error");
+            return acc;
+        } finally {
+            closeThings(pst, con);
+        }
+    }
+
+    /*
+     * Attempts to verify a user who registered via email address. Returns false if the email
+     * address is not in the database (or on SQL error).
+     */
+    public boolean verifyUser(String email) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        int rs = 0;
+        String userEmail = email;
+        try {
+            con = getConnection();
+            pst = con.prepareStatement("UPDATE users SET email_verify = 1 WHERE email = ?");
+            pst.setString(1, userEmail);
+            rs = pst.executeUpdate();
+            if (rs == 1)
+                return true;
+            else
+                return false;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        } finally {
+            closeThings(pst, con);
+        }
+    }
+
+    /*
+     * Returns true if the email is already in the database, false if not.
+     */
+    public boolean findEmail(String email) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        String userEmail = email;
+        try {
+            con = getConnection();
+            pst = con.prepareStatement("SELECT email, fb_id FROM users WHERE email = ?");
+            pst.setString(1, userEmail);
+            rs = pst.executeQuery();
+            if (rs.next())
+                return true;
+            else
+                return false;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        } finally {
+            closeThings(pst, con);
+        }
+    }
+
+    /*
+     * Attempts to find a user based off of their email address Returns the user's account or null
+     * if user does not exist/error Note: still returns account even if email is unverified
+     */
+    public AccountTransferable findEmailUser(String email) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        String userEmail = email;
+        try {
+            con = getConnection();
+            pst = con.prepareStatement("SELECT * FROM users WHERE email = ?");
+            pst.setString(1, userEmail);
+            rs = pst.executeQuery();
+            if (rs.next()) {
+                int id = rs.getInt("id");
+                String username = rs.getString("username");
+                String fb_id = rs.getString("fb_id");
+                String tw_name = rs.getString("tw_name");
+                boolean verify = (rs.getInt("email_verify") == 1) ? true : false;
+                AccountTransferable acc =
+                        new AccountTransferable(id, username, userEmail, fb_id, tw_name, null,
+                                null, verify);
+                return acc;
+            } else
+                return null;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return null;
+        } finally {
+            closeThings(pst, con);
+        }
+    }
+
+    /*
+     * Attempts to find a user based off of their FB email Returns the user's account or null if
+     * user does not exist/error
+     */
+    public AccountTransferable findFacebookUser(String fbid) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        String fb_id = fbid;
+        try {
+            con = getConnection();
+            pst = con.prepareStatement("SELECT * FROM users WHERE fb_id = ?");
+            pst.setString(1, fb_id);
+            rs = pst.executeQuery();
+            if (rs.next()) {
+                int id = rs.getInt("id");
+                String username = rs.getString("username");
+                String email = rs.getString("email");
+                String tw_name = rs.getString("tw_name");
+                boolean verify = (rs.getInt("email_verify") == 1) ? true : false;
+                AccountTransferable acc =
+                        new AccountTransferable(id, username, email, fb_id, tw_name, null, null,
+                                verify);
+                return acc;
+            } else
+                return null;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return null;
+        } finally {
+            closeThings(pst, con);
+        }
+    }
+
+    /*
+     * Attempts to find a user based off of their Twitter name Returns the user's account or null if
+     * user does not exist/error
+     */
+    public AccountTransferable findTwitterUser(String twname) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        String tw_name = twname;
+        try {
+            con = getConnection();
+            pst = con.prepareStatement("SELECT * FROM users WHERE tw_name = ?");
+            pst.setString(1, tw_name);
+            rs = pst.executeQuery();
+            if (rs.next()) {
+                int id = rs.getInt("id");
+                String username = rs.getString("username");
+                String email = rs.getString("email");
+                String fb_id = rs.getString("fb_id");
+                boolean verify = (rs.getInt("email_verify") == 1) ? true : false;
+                AccountTransferable acc =
+                        new AccountTransferable(id, username, email, fb_id, tw_name, null, null,
+                                verify);
+                return acc;
+            } else
+                return null;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return null;
+        } finally {
+            closeThings(pst, con);
+        }
+    }
+
+    /*
+     * Updates all fields (except password) in a row for a user with the given id. For any null
+     * inputs, the original values are maintained. Returns the updated AccountTransferable, or null
+     * on failure.
+     */
+    public AccountTransferable updateUser(int id, String name, String password, String email,
+            String fbid, String twname) {
+        String uname = name;
+        String upassword = password;
+        String uemail = email;
+        String ufbid = fbid;
+        String utwname = twname;
+        int verify;
+        boolean emailChanged = false;
+
+        Connection con = null;
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        try {
+            con = getConnection();
+            String sql =
+                    "SELECT username, password, email, fb_id, tw_name, "
+                            + "email_verify FROM users WHERE id = ?";
+            pst = con.prepareStatement(sql);
+            pst.setInt(1, id);
+            rs = pst.executeQuery();
+
+            rs.first();
+            if (uname == null) uname = rs.getString(1);
+            if (upassword == null) upassword = rs.getString(2);
+            if (uemail == null)
+                uemail = rs.getString(3);
+            else if (!uemail.equals(rs.getString(3))) emailChanged = true;
+            if (ufbid == null) ufbid = rs.getString(4);
+            if (utwname == null) utwname = rs.getString(5);
+            verify = rs.getInt(6);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        try {
+            String sql =
+                    "UPDATE users SET username = ?, password = ?, email = ?,"
+                            + "fb_id = ?, tw_name = ?, email_verify = ? WHERE id = ?";
+            pst = con.prepareStatement(sql);
+            pst.setString(1, uname);
+            pst.setString(2, upassword);
+            pst.setString(3, uemail);
+            pst.setString(4, ufbid);
+            pst.setString(5, utwname);
+            pst.setInt(6, (emailChanged) ? 0 : verify);
+            pst.setInt(7, id);
+            pst.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return null;
+        } finally {
+            closeThings(pst, con);
+        }
+        // get boolean verify value
+        boolean v = (verify == 1) ? true : false;
+        v = (emailChanged) ? false : v;
+        AccountTransferable acc =
+                new AccountTransferable(id, uname, uemail, ufbid, utwname, null, null, v);
+        if (emailChanged) {
+            Emailer.sendVerifyEmail(uemail);
+            acc.setErrMsg("A verification link has been sent "
+                    + "to your new email. You must verify it before logging in again.");
+        }
+        return acc;
+    }
+
+    /*
+     * Attempts to change a user's password. Returns true on success, false if oldpass is incorrect
+     * or if there's a SQL error
+     */
+    public boolean changePassword(int id, String oldpass, String newpass) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        try {
+            con = getConnection();
+            pst = con.prepareStatement("SELECT password FROM users WHERE id = ?");
+            pst.setInt(1, id);
+            rs = pst.executeQuery();
+            if (rs.next()) {
+                // if no old password or old password matches oldpass
+                if (rs.getString(1) == null || rs.getString(1).equals(oldpass)) {
+                    pst = con.prepareStatement("UPDATE users SET password = ? WHERE id = ?");
+                    pst.setString(1, newpass);
+                    pst.setInt(2, id);
+                    pst.executeUpdate();
+                    return true;
+                } else
+                    return false;
+            } else
+                return false;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        } finally {
+            closeThings(pst, con);
+        }
+    }
+
+    /*
+     * Attempts to logically merge two accounts, returns null on failure. In the case of conflicts,
+     * it saves the information of the account that is currently logged in. Note: id1 is the
+     * currently logged in account, id2 is the merge target
+     */
+    public AccountTransferable mergeAccounts(int id1, int id2) {
+        // TODO merge stats as well
+        Connection con = null;
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        int id = id1;
+        String name, pass, email, fbid, twname;
+        int verify;
+        try {
+            con = getConnection();
+            pst = con.prepareStatement("SELECT * FROM users WHERE id = ?");
+            pst.setInt(1, id1);
+            rs = pst.executeQuery();
+            if (rs.next()) {
+
+                name = rs.getString("username");
+                pass = rs.getString("password");
+                email = rs.getString("email");
+                fbid = rs.getString("fb_id");
+                twname = rs.getString("tw_name");
+                verify = rs.getInt("email_verify");
+
+                pst = con.prepareStatement("SELECT * FROM users WHERE id = ?");
+                pst.setInt(1, id2);
+                rs = pst.executeQuery();
+
+                if (rs.next()) {
+
+                    if (email == null) {
+                        email = rs.getString("email");
+                        pass = rs.getString("password");
+                        verify = rs.getInt("email_verify");
+                    }
+                    if (fbid == null) {
+                        fbid = rs.getString("fb_id");
+                    }
+                    if (twname == null) {
+                        twname = rs.getString("tw_name");
+                    }
+
+                    String sql =
+                            "UPDATE users SET username = ?, password = ?, email = ?,"
+                                    + "fb_id = ?, tw_name = ?, email_verify = ? WHERE id = ?";
+                    pst = con.prepareStatement(sql);
+                    pst.setString(1, name);
+                    pst.setString(2, pass);
+                    pst.setString(3, email);
+                    pst.setString(4, fbid);
+                    pst.setString(5, twname);
+                    pst.setInt(6, verify);
+                    pst.setInt(7, id);
+                    pst.executeUpdate();
+
+                    sql = "DELETE FROM users WHERE id = ?";
+                    pst = con.prepareStatement(sql);
+                    pst.setInt(1, id2);
+                    pst.executeUpdate();
+
+                    boolean v = (verify == 1) ? true : false;
+                    return new AccountTransferable(id, name, email, fbid, twname, null, null, v);
+                } else {
+                    System.out.println("Failure on second. id " + id2);
+                    return null;
+                }
+            } else {
+                System.out.println("Failure on first. id " + id1);
+                return null;
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return null;
+        } finally {
+            closeThings(pst, con);
+        }
+    }
+
+    public int[] downloadEndStats(int id) {
+        try {
+            Connection con = getConnection();
+            PreparedStatement pst = con.prepareStatement("SELECT * FROM userstats WHERE id = ?");
+            pst.setInt(1, id);
+            ResultSet rs = pst.executeQuery();
+            rs.next();
+            String sql =
+                    "UPDATE userstats SET kills = ?, deaths = ?, "
+                            + "suicides = ?, accuracy = ?, games_played = ? " + "WHERE id = ?";
+            pst = con.prepareStatement(sql);
+            int[] statsArray = {rs.getInt("kills"), rs.getInt("deaths"), rs.getInt("games_played")};
+            return statsArray;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            int[] emptyStats = {0, 0, 0};
+            return emptyStats;
+        }
+    }
+
+    public void uploadEndStats(EndGameStats s) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        for (Integer id : s.stats.keySet()) {
+            EndGameSelfStats e = s.stats.get(id);
+            int kills = 0, deaths = 0, suicides = 0, accuracy = 0;
+            for (Short k : e.getKillMap().values()) {
+                kills += k;
+            }
+            for (Short k : e.getDeathMap().values()) {
+                deaths += k;
+            }
+            if (e.getNumFired() > 0) accuracy = (e.getNumHitTarget() / e.getNumFired()) * 100;
+            try {
+                con = getConnection();
+                pst = con.prepareStatement("SELECT * FROM userstats WHERE id = ?");
+                pst.setInt(1, id);
+                rs = pst.executeQuery();
+                if (rs.next()) {
+                    int numGames = rs.getInt("games_played");
+                    String sql =
+                            "UPDATE userstats SET kills = ?, deaths = ?, "
+                                    + "suicides = ?, accuracy = ?, games_played = ? "
+                                    + "WHERE id = ?";
+                    pst = con.prepareStatement(sql);
+                    pst.setInt(1, kills + rs.getInt("kills"));
+                    pst.setInt(2, deaths + rs.getInt("deaths"));
+                    pst.setInt(3, suicides + rs.getInt("suicides"));
+                    pst.setInt(4, (accuracy + numGames * rs.getInt("accuracy")) / (numGames + 1));
+                    pst.setInt(5, ++numGames);
+                    pst.setInt(6, id);
+                    pst.executeUpdate();
+                } else {
+                    String sql =
+                            "INSERT INTO userstats(id, kills, deaths, "
+                                    + "suicides, accuracy, games_played) VALUES(?,?,?,?,?,?)";
+                    pst = con.prepareStatement(sql);
+                    pst.setInt(1, id);
+                    pst.setInt(2, kills);
+                    pst.setInt(3, deaths);
+                    pst.setInt(4, suicides);
+                    pst.setInt(5, accuracy);
+                    pst.setInt(6, 1);
+                    pst.executeUpdate();
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            } finally {
+                closeThings(pst, con);
+            }
+        }
+    }
+
+    // helper function
+    private void closeThings(PreparedStatement pst, Connection con) {
+        try {
+            if (pst != null) pst.close();
+            if (con != null) con.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+}

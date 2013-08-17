@@ -1,0 +1,194 @@
+package splat.potatoview;
+
+import java.util.Timer;
+import java.util.TimerTask;
+
+import splat.customui.PotatoSwipeDetector;
+import splat.customui.PotatoSwipeDetector.OnSwipeListener;
+import splat.potato.R;
+import splat.potatocontroller.MiniPotatoController;
+import android.app.Activity;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.TranslateAnimation;
+import android.widget.ImageView;
+
+public class MiniPotatoView extends Activity {
+
+    private MiniPotatoController miniPotatoController;
+    private GameActivity gameActivity;
+
+    private ImageView potato1;
+    private ImageView potato2;
+    private ImageView potato3;
+    private ImageView potato4;
+
+    private ImageView light1;
+    private ImageView light2;
+    private ImageView light3;
+
+    private ImageView launcher;
+    private ImageView title;
+
+    private Timer lightTimer;
+
+    private boolean currentlyShooting;
+
+    private TranslateAnimation shoot;
+    private TranslateAnimation move;
+
+    private MiniPotatoView view = this;
+
+    public MiniPotatoView(GameActivity gameActivity) {
+        this.gameActivity = gameActivity;
+        this.miniPotatoController = new MiniPotatoController(gameActivity.getGameController());
+        launcher = (ImageView) gameActivity.findViewById(R.id.minipotato_launcher);
+        title = (ImageView) gameActivity.findViewById(R.id.minipotato_title);
+
+        setupArrowAnimation();
+        setupPotatoAnimation();
+        setupSwipeDetector();
+
+        restart();
+    }
+
+    /**
+     * Sets up the swipe detector to listen for successful swipe events.
+     */
+    private void setupSwipeDetector() {
+        PotatoSwipeDetector swipeDetector =
+                (PotatoSwipeDetector) gameActivity.findViewById(R.id.minipotato_swipedetector);
+        swipeDetector.setOnSwipeListener(new OnSwipeListener() {
+            @Override
+            public void onSwipeDetected() {
+                playAnimationAndShoot();
+            }
+        });
+    }
+
+    /**
+     * Sets up the animation to match this player's character.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupPotatoAnimation() {
+        potato1 = (ImageView) gameActivity.findViewById(R.id.potatoCharacter1);
+        potato2 = (ImageView) gameActivity.findViewById(R.id.potatoCharacter2);
+        potato3 = (ImageView) gameActivity.findViewById(R.id.potatoCharacter3);
+        potato4 = (ImageView) gameActivity.findViewById(R.id.potatoCharacter4);
+
+        // TODO: You cannot use density independent pixels, so we need to know specific screens and
+        // change values based on that. This is the value for the incredible.
+        shoot = new TranslateAnimation(0, 0, 0, -800);
+        shoot.setDuration(200);
+        shoot.setFillAfter(false);
+        shoot.setAnimationListener(new AnimationListener() {
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                currentlyShooting = false;
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {}
+
+            @Override
+            public void onAnimationStart(Animation animation) {
+                miniPotatoController.shootPotato();
+            }
+
+        });
+
+        // TODO: Same as above: no density independent pixels.
+        move = new TranslateAnimation(0, 0, 0, -120);
+        move.setDuration(200);
+        move.setFillAfter(false);
+    }
+
+    /**
+     * Sets up the light-arrow animation.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupArrowAnimation() {
+        light1 = (ImageView) gameActivity.findViewById(R.id.minipotato_light1);
+        light2 = (ImageView) gameActivity.findViewById(R.id.minipotato_light2);
+        light3 = (ImageView) gameActivity.findViewById(R.id.minipotato_light3);
+
+        lightTimer = new Timer();
+        lightTimer.scheduleAtFixedRate(new TimerTask() {
+
+            private boolean swapTwo = true;
+
+            @Override
+            public void run() {
+                view.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (swapTwo) {
+                            swapImageViews(light1, light2);
+                        } else {
+                            swapImageViews(light1, light3);
+                        }
+
+                        swapTwo = !swapTwo;
+                    }
+                });
+            }
+
+        }, 0, 500);
+    }
+
+    /**
+     * Plays the animation and shoots the potato.
+     * 
+     * @author josephsoltzberg
+     */
+    private void playAnimationAndShoot() {
+        if (!currentlyShooting) {
+            currentlyShooting = true;
+
+            potato1.startAnimation(shoot);
+            potato2.startAnimation(move);
+            potato3.startAnimation(move);
+            potato4.startAnimation(move);
+        }
+    }
+
+    private void swapImageViews(ImageView v1, ImageView v2) {
+        ViewGroup.LayoutParams params1 = v1.getLayoutParams();
+
+        v1.setLayoutParams(v2.getLayoutParams());
+        v2.setLayoutParams(params1);
+    }
+
+    public void reset() {
+        ViewUtils.free(title);
+        ViewUtils.free(potato1);
+        ViewUtils.free(potato2);
+        ViewUtils.free(potato3);
+        ViewUtils.free(potato4);
+
+        System.gc();
+    }
+
+    public void restart() {
+        // images
+        launcher.setImageResource(R.drawable.hotpotato07);
+        title.setImageResource(R.drawable.minipotato_title);
+
+        // potato animation
+        final int avatarId = miniPotatoController.getMyAvatarId();
+
+        potato1.setImageResource(avatarId);
+        potato2.setImageResource(avatarId);
+        potato3.setImageResource(avatarId);
+        potato4.setImageResource(avatarId);
+
+        // arrow animation
+        light1.setImageResource(R.drawable.fling_arrowlight);
+        light2.setImageResource(R.drawable.fling_arrow_normal);
+        light3.setImageResource(R.drawable.fling_arrow_normal);
+    }
+}

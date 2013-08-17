@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/digging_background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/potato_blue" >
+
+    <LinearLayout
+        android:id="@+id/digging_garden_layout"
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        android:layout_gravity="top"
+        android:gravity="center"
+        android:orientation="horizontal" >
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/digging_dirt"
+        android:layout_width="wrap_content"
+        android:contentDescription="@string/none"
+        android:layout_height="220dp"
+        android:layout_gravity="bottom"
+        android:scaleType="fitXY" />
+
+    <TextView
+        android:id="@+id/digging_instructions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/holo_orange_light"
+        android:gravity="center"
+        android:paddingBottom="20dp"
+        android:paddingTop="20dp"
+        android:text="@string/digging_instructions"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+</FrameLayout>

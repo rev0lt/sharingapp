@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/potato_blue" >
+    
+    <TextView
+        android:id="@+id/postgame_gameover_message"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:gravity="center"
+        android:text="@string/postgame_gameover_message"
+        android:textColor="@color/white"
+        android:textSize="40sp"  />
+
+    <ImageView
+        android:id="@+id/postgame_upper_divider"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="45dp"
+        android:src="@drawable/postgame_white_dividerbar" />
+
+    <ScrollView
+        android:id="@+id/postgame_playerlist"
+        android:layout_width="match_parent"
+        android:layout_height="350dp"
+        android:layout_marginLeft="-13dp"
+        android:layout_marginTop="100dp" >
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" >
+        </TableLayout>
+    </ScrollView>
+
+    <TextView
+        android:id="@+id/postgame_player_text"
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"
+        android:layout_marginLeft="38dp"
+        android:layout_marginTop="55dp"
+        android:text="@string/postgame_player_message"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/postgame_losses_text"
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"
+        android:layout_marginLeft="145dp"
+        android:layout_marginTop="55dp"
+        android:text="@string/postgame_losses_message"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/postgame_potatoes_text"
+        android:layout_width="100dp"
+        android:layout_height="55dp"
+        android:layout_marginLeft="220dp"
+        android:layout_marginTop="50dp"
+        android:gravity="center"
+        android:text="@string/postgame_potatoes_message"
+        android:textSize="15sp" />
+
+    <ImageView
+        android:id="@+id/postgame_lower_divider"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="450dp"
+        android:src="@drawable/postgame_white_dividerbar" />
+
+    <ImageView
+        android:id="@+id/postgame_restart"
+        android:layout_width="200dp"
+        android:layout_height="125dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="452dp"
+        android:src="@drawable/postgame_play_button" />
+
+    <ImageView
+        android:id="@+id/postgame_home"
+        android:layout_width="105dp"
+        android:layout_height="55dp"
+        android:layout_marginLeft="230dp"
+        android:layout_marginTop="465dp"
+        android:src="@drawable/postgame_exit_button" />
+
+    <TextView
+        android:id="@+id/postgame_waiting_message"
+        android:layout_width="250dp"
+        android:layout_height="50dp"
+        android:layout_marginLeft="50dp"
+        android:layout_marginTop="400dp"
+        android:text="@string/postgame_waiting_message"
+        android:textSize="20sp"
+        android:visibility="invisible" />
+
+    <ImageView
+        android:id="@+id/postgame_round"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginLeft="265dp"
+        android:layout_marginTop="-15dp"
+        android:src="@drawable/postgame_round_text" />
+
+    <TextView
+        android:id="@+id/postgame_round_number"
+        android:layout_width="30dp"
+        android:layout_height="25dp"
+        android:layout_marginLeft="278dp"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:text="@string/postgame_zero"
+        android:textColor="@color/white"
+        android:textSize="20sp" />
+
+</RelativeLayout>

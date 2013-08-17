@@ -1,0 +1,179 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@color/potato_blue"
+    android:orientation="vertical" >
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
+
+        <ImageView
+            android:id="@+id/lobby_player_grid"
+            android:layout_width="match_parent"
+            android:layout_height="280dp"
+            android:layout_marginLeft="0dp"
+            android:layout_marginTop="85dp"
+            android:src="@drawable/lobby_6_players_background" />
+
+        <ImageView
+            android:id="@+id/lobby_player_1"
+            android:layout_width="106dp"
+            android:layout_height="125dp"
+            android:layout_marginLeft="0dp"
+            android:layout_marginTop="99dp"
+            android:background="@android:color/transparent" />
+
+        <ImageView
+            android:id="@+id/lobby_player_2"
+            android:layout_width="105dp"
+            android:layout_height="125dp"
+            android:layout_marginLeft="107dp"
+            android:layout_marginTop="99dp"
+            android:background="@android:color/transparent" />
+
+        <ImageView
+            android:id="@+id/lobby_player_3"
+            android:layout_width="106dp"
+            android:layout_height="125dp"
+            android:layout_marginLeft="214dp"
+            android:layout_marginTop="99dp"
+            android:background="@android:color/transparent" />
+
+        <ImageView
+            android:id="@+id/lobby_player_4"
+            android:layout_width="106dp"
+            android:layout_height="125dp"
+            android:layout_marginLeft="0dp"
+            android:layout_marginTop="225dp"
+            android:background="@android:color/transparent" />
+
+        <ImageView
+            android:id="@+id/lobby_player_5"
+            android:layout_width="105dp"
+            android:layout_height="125dp"
+            android:layout_marginLeft="107dp"
+            android:layout_marginTop="225dp"
+            android:background="@android:color/transparent" />
+
+        <ImageView
+            android:id="@+id/lobby_player_6"
+            android:layout_width="106dp"
+            android:layout_height="125dp"
+            android:layout_marginLeft="214dp"
+            android:layout_marginTop="225dp"
+            android:background="@android:color/transparent" />
+
+        <ImageView
+            android:id="@+id/lobby_start_button"
+            android:layout_width="200dp"
+            android:layout_height="120dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerInParent="true"
+            android:layout_marginBottom="30dp"
+            android:src="@drawable/lobby_start_button" />
+
+        <ImageView
+            android:id="@+id/lobby_tutorial_button"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:layout_marginLeft="230dp"
+            android:layout_marginTop="450dp"
+            android:src="@drawable/lobby_tutorial_button" />
+
+        <TextView
+            android:id="@+id/lobby_start_instructions_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/lobby_start_button"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="-10dp"
+            android:text="@string/lobby_start_instructions"
+            android:textColor="@color/white"
+            android:textSize="15sp" />
+
+        <ImageView
+            android:id="@+id/lobby_back_button"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="450dp"
+            android:src="@drawable/lobby_back_button" />
+
+        <ImageView
+            android:id="@+id/lobby_title"
+            android:layout_width="350dp"
+            android:layout_height="50dp"
+            android:layout_marginLeft="0dp"
+            android:layout_marginTop="25dp"
+            android:src="@drawable/lobby_potatotime_icon" />
+
+    </RelativeLayout>
+
+    <FrameLayout
+        android:id="@+id/tutorial_layout"
+        android:layout_width="250dp"
+        android:layout_height="350dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="24dp"
+        android:visibility="invisible"
+        android:background="@color/black" >
+
+        <Button
+            android:id="@+id/tut_prev_button"
+            android:layout_width="30dp"
+            android:layout_height="40dp"
+            android:layout_gravity="bottom|left"
+            android:layout_marginBottom="20dp"
+            android:layout_marginLeft="20dp"
+            android:background="@drawable/arrow_button_2"
+            android:visibility="invisible"
+            android:text="@string/ingame_space" />
+
+        <Button
+            android:id="@+id/tut_next_button"
+            android:layout_width="30dp"
+            android:layout_height="40dp"
+            android:layout_gravity="bottom|right"
+            android:layout_marginBottom="20dp"
+            android:layout_marginRight="20dp"
+            android:background="@drawable/arrow_button"
+            android:text="@string/ingame_space" />
+
+        <Button
+            android:id="@+id/tut_x_button"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="top|right"
+            android:layout_marginRight="20dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/x_button"
+            android:text="@string/ingame_space" />
+
+        <ImageView
+            android:id="@+id/tut_img1"
+            android:layout_width="225dp"
+            android:layout_height="250dp"
+            android:layout_gravity="center_vertical|left"
+            android:layout_marginTop="15dp"
+            android:src="@drawable/tut_slide1" />
+
+        <ImageView
+            android:id="@+id/tut_img2"
+            android:layout_width="225dp"
+            android:layout_height="250dp"
+            android:layout_gravity="center"
+            android:visibility="invisible"
+            android:src="@drawable/tut_slide2" />
+
+        <ImageView
+            android:id="@+id/tut_img3"
+            android:layout_width="220dp"
+            android:layout_height="230dp"
+            android:layout_gravity="center"
+            android:src="@drawable/tut_slide3"
+            android:visibility="invisible" />
+
+    </FrameLayout>
+
+</FrameLayout>

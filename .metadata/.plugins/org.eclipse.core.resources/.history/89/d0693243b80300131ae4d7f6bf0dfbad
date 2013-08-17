@@ -1,0 +1,5 @@
+package splat.sharingcontroller;
+
+public class ContactsController {
+
+}

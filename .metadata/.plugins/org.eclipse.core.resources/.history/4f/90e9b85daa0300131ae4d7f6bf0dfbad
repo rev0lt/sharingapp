@@ -1,0 +1,350 @@
+package splat.potatoview;
+
+import splat.potato.R;
+import splat.potatocontroller.LobbyController;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+public class LobbyActivity extends Activity {
+
+    private static final String DISCONNECT_DIALOG_MESSAGE = "Cannot connect to server!";
+    private static final String DISCONNECT_BUTTON_TEXT = "Quit Application";
+
+    private LobbyController lobbyController;
+    private ImageView[] avatarImages = new ImageView[6];
+    private AvatarData[] avatarData = new AvatarData[6];
+    private int numAvatars = 0;
+    private AlertDialog alertDialog;
+    private ImageView back;
+
+    private FrameLayout tutorialLayout;
+    private int tutorialScreen;
+
+    @Override
+    public void onCreate(Bundle bundle) {
+        super.onCreate(bundle);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        setContentView(R.layout.activity_lobby);
+        lobbyController = new LobbyController(this);
+        setupAvatarImages();
+        addMe();
+        setupBackButton();
+        setupTutorial();
+        setupStartButton();
+    }
+
+    /**
+     * Initializes the list of ImageViews holding the avatars.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupAvatarImages() {
+        avatarImages[0] = (ImageView) findViewById(R.id.lobby_player_1);
+        avatarImages[1] = (ImageView) findViewById(R.id.lobby_player_2);
+        avatarImages[2] = (ImageView) findViewById(R.id.lobby_player_3);
+        avatarImages[3] = (ImageView) findViewById(R.id.lobby_player_4);
+        avatarImages[4] = (ImageView) findViewById(R.id.lobby_player_5);
+        avatarImages[5] = (ImageView) findViewById(R.id.lobby_player_6);
+    }
+
+    /**
+     * Adds the player's avatar to the screen as player 1.
+     * 
+     * @author josephsoltzberg
+     */
+    private void addMe() {
+        avatarData[numAvatars] = new AvatarData(-1, lobbyController.getMyAvatar(), numAvatars);
+        avatarImages[numAvatars].setImageResource(avatarData[numAvatars].getAvatarId());
+        numAvatars++;
+    }
+
+    /**
+     * Sets up the go-back button.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupBackButton() {
+        back = (ImageView) findViewById(R.id.lobby_back_button);
+        back.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                LobbyActivity.this.onBackPressed();
+            }
+        });
+    }
+
+    /**
+     * Sets up the tutorial.
+     * 
+     * @author Mike
+     */
+    private void setupTutorial() {
+        tutorialLayout = (FrameLayout) findViewById(R.id.tutorial_layout);
+        tutorialScreen = 1;
+
+        setupTutorialButtons();
+    }
+
+    private void toggleTutorial() {
+    	final ImageView start = (ImageView) findViewById(R.id.lobby_start_button);
+    	if (tutorialLayout.getVisibility() == View.INVISIBLE) {
+        	start.setEnabled(false);
+            tutorialLayout.setVisibility(View.VISIBLE);
+        } else {
+        	start.setEnabled(true);
+            tutorialLayout.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    /**
+     * Takes the player to the tutorial.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupTutorialButtons() {
+        ImageView tutorial = (ImageView) findViewById(R.id.lobby_tutorial_button);
+        tutorial.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleTutorial();
+            }
+        });
+
+        final Button tutNextButton = (Button) findViewById(R.id.tut_next_button);
+        final Button tutPrevButton = (Button) findViewById(R.id.tut_prev_button);
+        Button tutXButton = (Button) findViewById(R.id.tut_x_button);
+
+        final ImageView tut_img1 = (ImageView) findViewById(R.id.tut_img1);
+        final ImageView tut_img2 = (ImageView) findViewById(R.id.tut_img2);
+        final ImageView tut_img3 = (ImageView) findViewById(R.id.tut_img3);
+
+        tutNextButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switch (tutorialScreen) {
+                    case 1:
+                        tut_img1.setVisibility(View.INVISIBLE);
+                        tut_img2.setVisibility(View.VISIBLE);
+
+                        tutPrevButton.setVisibility(View.VISIBLE);
+
+                        tutorialScreen = 2;
+                        break;
+
+                    case 2:
+                        tut_img2.setVisibility(View.INVISIBLE);
+                        tut_img3.setVisibility(View.VISIBLE);
+
+                        tutNextButton.setVisibility(View.INVISIBLE);
+
+                        tutorialScreen = 3;
+                        break;
+                }
+            }
+        });
+
+        tutPrevButton.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                switch (tutorialScreen) {
+
+                    case 2:
+                        tut_img1.setVisibility(View.VISIBLE);
+                        tut_img2.setVisibility(View.INVISIBLE);
+
+                        tutPrevButton.setVisibility(View.INVISIBLE);
+
+                        tutorialScreen = 1;
+                        break;
+
+                    case 3:
+                        tut_img2.setVisibility(View.VISIBLE);
+                        tut_img3.setVisibility(View.INVISIBLE);
+
+                        tutNextButton.setVisibility(View.VISIBLE);
+                        tutorialScreen = 2;
+
+                        break;
+                }
+            }
+
+        });
+
+        tutXButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleTutorial();
+            }
+        });
+    }
+
+    /**
+     * Indicates player is ready to start game.
+     * 
+     * @author josephsoltzberg
+     */
+    private void setupStartButton() {
+        final ImageView start = (ImageView) findViewById(R.id.lobby_start_button);
+        start.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                lobbyController.startSelected();
+                ViewUtils.setAlpha(start, 0.5f);
+                ((TextView) findViewById(R.id.lobby_start_instructions_text))
+                        .setText(getString(R.string.lobby_waiting));
+            }
+        });
+    }
+
+    /**
+     * Adds another player to the screen in the correct position.
+     * 
+     * @param avatarId
+     * 
+     * @author josephsoltzberg
+     */
+    public void addOpponentImage(final int avatarId, final short clientId) {
+        avatarData[numAvatars] = new AvatarData(clientId, avatarId, numAvatars);
+        avatarImages[numAvatars].setImageResource(avatarData[numAvatars].getAvatarId());
+        numAvatars++;
+    }
+
+    /**
+     * Removes a player from the view and shifts everyone down as many spots as necessary.
+     * 
+     * @param clientId
+     * 
+     * @author josephsoltzberg
+     */
+    public void removeOpponentImage(final short clientId) {
+        AvatarData opponent = null;
+        for (int i = 0; i < avatarData.length; i++) {
+            if ((avatarData[i] != null) && (avatarData[i].getClientId() == clientId)) {
+                opponent = avatarData[i];
+            }
+        }
+        int spotsToShift = numAvatars - opponent.avatarPosition - 1;
+        if (spotsToShift == 0) {
+            avatarData[opponent.avatarPosition] = null;
+            avatarImages[opponent.avatarPosition].setImageResource(-1);
+        } else {
+            for (int i = 0; i < spotsToShift; i++) {
+                avatarData[opponent.getAvatarPosition() + i] =
+                        avatarData[opponent.getAvatarPosition() + i + 1];
+                avatarData[opponent.getAvatarPosition() + i].setAvatarPosition(opponent
+                        .getAvatarPosition() + i);
+                avatarImages[opponent.getAvatarPosition() + i].setImageResource(avatarData[opponent
+                        .getAvatarPosition() + i].getAvatarId());
+            }
+            avatarData[opponent.getAvatarPosition() + spotsToShift] = null;
+            avatarImages[opponent.getAvatarPosition() + spotsToShift].setImageResource(-1);
+        }
+        numAvatars--;
+    }
+
+    @Override
+    public void onBackPressed() {
+        lobbyController.onBackPressed();
+    }
+
+    /**
+     * Triggered on socket exception
+     * 
+     * @author sam
+     */
+    public void showDisconnectDialog() {
+        alertDialog =
+                new AlertDialog.Builder(this)
+                        .setTitle(DISCONNECT_DIALOG_MESSAGE)
+                        .setCancelable(false)
+                        .setNeutralButton(DISCONNECT_BUTTON_TEXT,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface disconnectDialog, int which) {
+                                        disconnectDialog.dismiss();
+                                        // startActivity(new Intent(getBaseContext(),
+                                        // StartActivity.class));
+                                        // finish();
+                                        android.os.Process.killProcess(android.os.Process.myPid());
+                                    }
+                                }).create();
+        alertDialog.show();
+    }
+
+    /**
+     * Class meant to handle all data associated with displaying a players' avatar in the avatar
+     * table.
+     * 
+     * @author josephsoltzberg
+     */
+    private class AvatarData {
+
+        private int clientId;
+        private int avatarId;
+        private int avatarPosition;
+
+        public AvatarData(final int clientId, final int avatarId, final int avatarPosition) {
+            this.setClientId(clientId);
+            this.setAvatarId(avatarId);
+            this.setAvatarPosition(avatarPosition);
+        }
+
+        public int getClientId() {
+            return clientId;
+        }
+
+        public void setClientId(int clientId) {
+            this.clientId = clientId;
+        }
+
+        public int getAvatarId() {
+            return avatarId;
+        }
+
+        public void setAvatarId(int avatarId) {
+            this.avatarId = avatarId;
+        }
+
+        public int getAvatarPosition() {
+            return avatarPosition;
+        }
+
+        public void setAvatarPosition(int avatarPosition) {
+            this.avatarPosition = avatarPosition;
+        }
+    }
+    
+    /**
+     * Free images from lobby before starting GameActivity
+     * 
+     * @author sbobra
+     */
+    public void freeResources() {
+        for(int i = 0; i<avatarImages.length; i++) {
+            ViewUtils.free(avatarImages[i]);
+        }
+        ViewUtils.free(back);
+        ViewUtils.free((ImageView) findViewById(R.id.lobby_tutorial_button));
+        ViewUtils.free((ImageView) findViewById(R.id.lobby_start_button));
+        ViewUtils.free((ImageView) findViewById(R.id.lobby_tutorial_button));
+        ViewUtils.free((ImageView) findViewById(R.id.lobby_title));
+        ViewUtils.free((ImageView) tutorialLayout.findViewById(R.id.tut_img1));
+        ViewUtils.free((ImageView) tutorialLayout.findViewById(R.id.tut_img2));
+        ViewUtils.free((ImageView) tutorialLayout.findViewById(R.id.tut_img3));
+        ViewUtils.free((ImageView) findViewById(R.id.lobby_player_grid));
+        ((TextView) findViewById(R.id.lobby_start_instructions_text)).setVisibility(View.GONE);
+        System.gc();
+    }
+}

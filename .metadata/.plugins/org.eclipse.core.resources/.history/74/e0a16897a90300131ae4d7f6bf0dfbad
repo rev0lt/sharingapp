@@ -1,0 +1,32 @@
+package splat.potatocontroller;
+
+import splat.potatomodel.GameState;
+import splat.potatomodel.HardCoded;
+
+public class MiniPotatoController {
+    
+    private GameState state;
+    private GameController gameController;
+    
+    public MiniPotatoController(GameController gameController) {
+        this.state = GameState.getInstance();
+        this.gameController = gameController;
+    }
+    
+    /**
+     * @return This player's avatar Id.
+     * 
+     * @author josephsoltzberg
+     */
+    public int getMyAvatarId() {
+        return HardCoded.getAvatar(state.getMyCharacterId());
+    }
+    
+    /**
+     * Shoots a potato at the other player.
+     */
+    public void shootPotato() {
+        gameController.sendMiniPotato();
+    }
+
+}

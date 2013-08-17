@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mashing_minigame"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/potato_blue"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/mashing_instructions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:background="@color/light_orange"
+        android:gravity="center"
+        android:paddingBottom="20dp"
+        android:paddingTop="20dp"
+        android:text="@string/mashing_instructions"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <ImageView
+            android:id="@+id/mashing_before"
+            android:layout_width="wrap_content"
+            android:layout_height="340dp" />
+
+        <ImageView
+            android:id="@+id/mashing_after"
+            android:layout_width="wrap_content"
+            android:layout_height="280dp"
+            android:visibility="invisible" />
+
+    </FrameLayout>
+
+    <ProgressBar
+        android:id="@+id/mashing_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</LinearLayout>

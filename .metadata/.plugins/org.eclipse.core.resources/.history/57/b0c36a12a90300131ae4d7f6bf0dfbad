@@ -1,0 +1,117 @@
+package splat.minigames;
+
+import java.util.Random;
+
+import splat.potato.R;
+import splat.potatoview.GameActivity;
+import splat.potatoview.ViewUtils;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+
+public class MashingMinigame extends MinigameController {
+
+    private static int MIN_NUMBER_OF_CLICKS = 15;
+    private static int MAX_NUMBER_OF_CLICKS = 25;
+
+    private int clicks;
+    private int start_clicks;
+
+    @Override
+    public void initialize(GameActivity activity, View view) {
+        super.initialize(activity, view);
+
+        gameView = new MashingMinigameView();
+        gameView.setView(view);
+        gameView.initialize();
+
+        clicks = getRandomNumberOfClicks();
+        start_clicks = clicks;
+        restart();
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+    }
+
+    @Override
+    public void restart() {
+        clicks = getRandomNumberOfClicks();
+        start_clicks = clicks;
+        super.restart();
+    }
+
+    private int getRandomNumberOfClicks() {
+        return MIN_NUMBER_OF_CLICKS
+                + (new Random()).nextInt(MAX_NUMBER_OF_CLICKS - MIN_NUMBER_OF_CLICKS + 1);
+    }
+
+    public void click() {
+        clicks--;
+
+        if (clicks <= 0) {
+            complete(GameActivity.Minigames.MINIGAME_MASHING.index());
+        }
+
+        ((MashingMinigameView) gameView).updateProgress(clicks, start_clicks);
+    }
+
+    private class MashingMinigameView extends MinigameView {
+
+        private ImageView mashingPotatoes;
+        private ImageView mashedPotatoes;
+
+        private ProgressBar mashingProgress;
+
+        @Override
+        public void initialize() {
+            mashingProgress = (ProgressBar) view.findViewById(R.id.mashing_progress);
+            mashingPotatoes = (ImageView) view.findViewById(R.id.mashing_before);
+            mashingPotatoes.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    click();
+                }
+            });
+            mashedPotatoes = (ImageView) view.findViewById(R.id.mashing_after);
+            restart();
+        }
+
+        @Override
+        public void reset() {
+            ViewUtils.free(mashingPotatoes);
+            ViewUtils.free(mashedPotatoes);
+        }
+
+        @Override
+        public void restart() {
+            mashingPotatoes.setImageResource(R.drawable.potato_pile);
+            mashedPotatoes.setImageResource(R.drawable.mashed_potatoes);
+            mashedPotatoes.setVisibility(View.INVISIBLE);
+
+            updateProgress(1, 1);
+        }
+
+        @SuppressWarnings("deprecation")
+        public void updateProgress(int num, int total) {
+            int version = android.os.Build.VERSION.SDK_INT;
+
+            float toDone = (float) num / (float) total;
+
+            if (version >= 11) {
+                mashingPotatoes.setAlpha(toDone);
+                mashedPotatoes.setAlpha(1 - toDone);
+            } else {
+                int toDoneInt = (int) Math.floor(255.0 * toDone);
+
+                mashingPotatoes.setAlpha(toDoneInt);
+                mashedPotatoes.setAlpha(255 - toDoneInt);
+            }
+            mashedPotatoes.setVisibility(View.VISIBLE);
+
+            mashingProgress.setMax(total);
+            mashingProgress.setProgress(total - num);
+        }
+    }
+}

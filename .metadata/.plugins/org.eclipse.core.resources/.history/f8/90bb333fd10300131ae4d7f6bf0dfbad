@@ -1,0 +1,58 @@
+package splat.sharingcontroller;
+
+import network.NetworkEvent;
+import serverconnection.PingListener;
+import serverconnection.ServerConnection;
+import splat.Splat;
+import splat.OnDataReceiveListener;
+import splat.sharingview.ShootActivity;
+
+public class ShootController {
+	ShootActivity view;
+	private Splat splat;
+
+    public ShootController(ShootActivity view) {
+        this.view = view;
+        ServerConnection sc = NetworkController.getServerConnection();
+        if (sc != null) {
+            // We backed into this activity from the lobby
+            sc.setOnReceiveNetworkEventListener(new BackoutListener());
+        }
+        setupSplat();
+    }
+    
+    /**
+     * Sets up the splat device and its listeners.
+     * 
+     * @author sbobra
+     */
+    private void setupSplat() {
+        splat = Splat.getInstance();
+        splat.setOnDataReceiveListener(new OnDataReceiveListener() {
+            @Override
+            public void onDataReceive(Splat splat, byte data) {
+                //blah
+            }
+        });
+        splat.turnOnLed();
+    }
+    
+    /**
+     * To be called when a player wants to send a hot potato. Sends the data over Splat device.
+     * 
+     * @author josephsoltzberg
+     */
+    public void shootInfo() {
+    	int data = 0;
+        splat.sendData(data);
+    }
+    
+    private class BackoutListener extends PingListener {
+        @Override
+        public void onReceiveNetworkEvent(final ServerConnection serverConnection,
+                final NetworkEvent event) {
+            super.onReceiveNetworkEvent(serverConnection, event);
+            //implement me
+        }
+    }
+}

@@ -1,0 +1,18 @@
+package splat.sharingmodel;
+
+import splat.sharing.R;
+
+public class HardCoded {
+    public static final int[] avatars = {1, 2};
+    public static final int[] avatarIds = {R.id.character_hipster, R.id.character_girl,
+            R.id.character_wizard, R.id.character_astronaut, R.id.character_kitty,
+            R.id.character_ninja, R.id.character_superhero, R.id.character_knight,
+            R.id.character_pirate, R.id.character_sir};
+
+    public static int getAvatar(int charID) {
+        if (charID >= 0 && charID < avatars.length)
+            return avatars[charID];
+        else
+            return -1;
+    }
+}
