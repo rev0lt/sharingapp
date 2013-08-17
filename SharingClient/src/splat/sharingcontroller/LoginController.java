@@ -42,7 +42,7 @@ public class LoginController {
 						String password = "";
 						Object[] data = new Object[2];
 						data[0] = email;
-						data[1] = password;// ENCRYPT ME
+						data[1] = password;//ENCRYPT ME
 						connection.sendEvent(new NetworkEvent(
 								SharingType.LOG_IN, data));
 					}
@@ -50,7 +50,7 @@ public class LoginController {
 	}
 
 	public void onNewUserPressed() {
-		// TODO: pop up dialog
+		view.showNewUserDialog();
 	}
 
 	public void onNewUserSubmitPressed(final String email, final String password) {
@@ -71,11 +71,6 @@ public class LoginController {
 								SharingType.NEW_USER, data));
 					}
 				}));
-		// TODO: close dialog
-	}
-
-	public void onNewUserCancelPressed() {
-		// TODO: close dialog
 	}
 
 	/**
@@ -124,12 +119,6 @@ public class LoginController {
 				sc.setOnDisconnectListener(null);
 				view.startActivity(new Intent(view, ShootActivity.class));
 				view.finish();
-				/*
-				 * lobbyActivity.runOnUiThread(new Runnable() {
-				 * 
-				 * @Override public void run() { toGame((Short) evt.getData());
-				 * } });
-				 */
 			} else if (evt.getType().equals(SharingType.NEW_USER)) {
 				// fetch from view
 				String email = "";
@@ -150,12 +139,6 @@ public class LoginController {
 				sc.setOnDisconnectListener(null);
 				view.startActivity(new Intent(view, ShootActivity.class));
 				view.finish();
-				/*
-				 * lobbyActivity.runOnUiThread(new Runnable() {
-				 * 
-				 * @Override public void run() { toGame((Short) evt.getData());
-				 * } });
-				 */
 			}
 		}
 	}

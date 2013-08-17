@@ -59,6 +59,12 @@ public final class R {
         public static final int shoot_contacts=0x7f080010;
         public static final int shoot_editprofile=0x7f08000f;
         public static final int start_gamename=0x7f08000d;
+        public static final int userdata_email=0x7f080016;
+        public static final int userdata_facebook=0x7f080017;
+        public static final int userdata_linkedin=0x7f080019;
+        public static final int userdata_name=0x7f080015;
+        public static final int userdata_ok=0x7f08001a;
+        public static final int userdata_twitter=0x7f080018;
     }
     public static final class layout {
         public static final int activity_contacts=0x7f030000;
@@ -66,32 +72,34 @@ public final class R {
         public static final int activity_login=0x7f030002;
         public static final int activity_shoot=0x7f030003;
         public static final int dialog_newuser=0x7f030004;
+        public static final int dialog_userdata=0x7f030005;
     }
     public static final class string {
         public static final int action_settings=0x7f040001;
         public static final int app_name=0x7f040000;
-        public static final int edit_email=0x7f04000d;
-        public static final int edit_facebook=0x7f04000e;
+        public static final int edit_email=0x7f04000e;
+        public static final int edit_facebook=0x7f04000f;
         /**  edit 
          */
-        public static final int edit_greeting=0x7f04000a;
-        public static final int edit_linkedin=0x7f040010;
-        public static final int edit_name=0x7f04000b;
-        public static final int edit_password=0x7f04000c;
-        public static final int edit_submit=0x7f040011;
-        public static final int edit_twitter=0x7f04000f;
+        public static final int edit_greeting=0x7f04000b;
+        public static final int edit_linkedin=0x7f040011;
+        public static final int edit_name=0x7f04000c;
+        public static final int edit_password=0x7f04000d;
+        public static final int edit_submit=0x7f040012;
+        public static final int edit_twitter=0x7f040010;
         /**  login 
          */
-        public static final int login_greeting=0x7f040003;
-        public static final int login_newuser=0x7f040005;
-        public static final int login_submit=0x7f040004;
-        public static final int none=0x7f040002;
-        public static final int shoot_button=0x7f040007;
-        public static final int shoot_contacts=0x7f040009;
-        public static final int shoot_editprofile=0x7f040008;
+        public static final int login_greeting=0x7f040004;
+        public static final int login_newuser=0x7f040006;
+        public static final int login_submit=0x7f040005;
+        public static final int none=0x7f040003;
+        public static final int nothing=0x7f040002;
+        public static final int shoot_button=0x7f040008;
+        public static final int shoot_contacts=0x7f04000a;
+        public static final int shoot_editprofile=0x7f040009;
         /**  shoot 
          */
-        public static final int shoot_greeting=0x7f040006;
+        public static final int shoot_greeting=0x7f040007;
     }
     public static final class style {
         /** 

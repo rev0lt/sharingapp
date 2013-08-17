@@ -40,8 +40,7 @@ public class ShootController {
 		splat.setOnDataReceiveListener(new OnDataReceiveListener() {
 			@Override
 			public void onDataReceive(Splat splat, byte data) {
-				sc.sendEvent(new NetworkEvent(SharingType.HIT,
-						data));
+				sc.sendEvent(new NetworkEvent(SharingType.HIT, data));
 			}
 		});
 		splat.turnOnLed();
@@ -82,9 +81,15 @@ public class ShootController {
 				for (int i = 0; i < State.getInstance().getMe().serialize().length; i++) {
 					userArray[i] = dataArray[i];
 				}
-				UserData otherUserData = new UserData();
+				final UserData otherUserData = new UserData();
 				otherUserData.deserialize(userArray);
-				// TODO: display other user's info on screen
+				view.runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						view.showDialog(otherUserData);
+					}
+				});
+
 				int permission = (Integer) dataArray[dataArray.length - 1];
 				if (permission == 0) {
 					// needs confirmation
@@ -94,13 +99,6 @@ public class ShootController {
 							otherUserData.getId()));
 				}
 				// else, transaction complete
-
-				/*
-				 * lobbyActivity.runOnUiThread(new Runnable() {
-				 * 
-				 * @Override public void run() { toGame((Short) evt.getData());
-				 * } });
-				 */
 			}
 		}
 	}

@@ -3,7 +3,10 @@ package splat.sharingview;
 import splat.sharing.R;
 import splat.sharingcontroller.LoginController;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
@@ -19,6 +22,7 @@ public class LoginActivity extends Activity {
 	private Button submitButton;
 	private Button newUserButton;
 	private Dialog newUserDialog;
+	private AlertDialog confirmationDialog;
 
 	@Override
 	public void onCreate(Bundle bundle) {
@@ -63,7 +67,6 @@ public class LoginActivity extends Activity {
 				.findViewById(R.id.newuser_cancel);
 		newUserCancelButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				controller.onNewUserCancelPressed();
 				newUserDialog.dismiss();
 			}
 		});
@@ -71,6 +74,20 @@ public class LoginActivity extends Activity {
 
 	public void showNewUserDialog() {
 		newUserDialog.show();
+	}
+	
+	public void showConfirmationDialog(String name) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Would you like to share your data with " + name + "?");
+        builder.setCancelable(false);
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface confirmationDialog, int which) {
+            	//TODO: FINISH ME
+                confirmationDialog.dismiss();
+            }
+        });
+        confirmationDialog = builder.create();
+        confirmationDialog.show();
 	}
 
 	public String getEmailText() {
